@@ -55,12 +55,12 @@ public class OsData {
             return OsType.ANDROID;
         }
 
-        final String osName = System.getProperty("os.name");
+        final String osName = System.getProperty("os.name").toUpperCase();
         if (osName.contains("WIN")) {
             return OsType.WIN;
         } else if (osName.contains("MACOS")) {
             return OsType.MACOS;
-        } else if (osName.contains("Linux")) {
+        } else if (osName.contains("LINUX")) {
             return getLinuxType();
         }
         throw new RuntimeException("Unsupported OS");
