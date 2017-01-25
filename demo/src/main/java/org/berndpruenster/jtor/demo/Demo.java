@@ -2,9 +2,7 @@ package org.berndpruenster.jtor.demo;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
 import java.net.Socket;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -27,7 +25,7 @@ public class Demo {
   @Parameter(names = "-p", description = "hidden Service Port")
   private int    port;
 
-  public static void main(final String[] args) throws IOException {
+  public static void main(final String[] args) throws Exception {
     final Demo demo = new Demo();
     demo.port = 10024;
     new JCommander(demo, args);
@@ -50,10 +48,12 @@ public class Demo {
             @Override
             public void run() {
               try {
+                System.err.println("we'll try and connect to the just-published hidden service in 5 seconds");
+                sleep(5000);
                 new TorSocket(mgr, hiddenServiceSocket.getServiceName(), hiddenServiceSocket.getHiddenServicePort());
                 System.err.println("Connected to " + hiddenServiceSocket + ". exiting...");
 
-              } catch (final IOException e1) {
+              } catch (final Exception e1) {
                 e1.printStackTrace();
               }
               System.exit(0);
@@ -62,7 +62,7 @@ public class Demo {
           con = socket.accept();
           System.err.println(socket + " got a connection");
 
-        } catch (final IOException e) {
+        } catch (final Exception e) {
           e.printStackTrace();
         }
       }
@@ -73,7 +73,7 @@ public class Demo {
 
   }
 
-  private static Collection<String> parseBridgeLines(final String file) throws FileNotFoundException, IOException {
+  private static Collection<String> parseBridgeLines(final String file) throws Exception {
     try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
       final LinkedList<String> lines = new LinkedList<>();
       String line;

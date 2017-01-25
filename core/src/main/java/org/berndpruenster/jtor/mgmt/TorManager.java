@@ -89,13 +89,23 @@ public abstract class TorManager {
 
   private static final String   NET_LISTENERS_SOCKS        = "net/listeners/socks";
 
-  private static final String[] EVENTS                     = { "CIRC", "WARN", "ERR" };
-  private static final String[] EVENTS_HS                  = { "EXTENDED", "CIRC", "ORCONN", "INFO", "NOTICE", "WARN",
-      "ERR", "HS_DESC" };
+  private static final String[] EVENTS                     = {
+      "CIRC",
+      "WARN",
+      "ERR" };
+  private static final String[] EVENTS_HS                  = {
+      "EXTENDED",
+      "CIRC",
+      "ORCONN",
+      "INFO",
+      "NOTICE",
+      "WARN",
+      "ERR",
+      "HS_DESC" };
 
   private static final String   OWNER                      = "__OwningControllerProcess";
-  private static final int      COOKIE_TIMEOUT             = 3 * 1000;                                                // Milliseconds
-  private static final int      HOSTNAME_TIMEOUT           = 30 * 1000;                                               // Milliseconds
+  private static final int      COOKIE_TIMEOUT             = 3 * 1000;                                 // Milliseconds
+  private static final int      HOSTNAME_TIMEOUT           = 30 * 1000;                                // Milliseconds
   private static final Logger   LOG                        = LoggerFactory.getLogger(TorManager.class);
 
   protected final TorContext    onionProxyContext;
@@ -133,7 +143,11 @@ public abstract class TorManager {
     if (isBootstrapped()) {
       throw new IOException("Tor is already bootstrapped!");
     }
-    bridgeConfig.add(line);
+    if (line.length() > 10) {
+      bridgeConfig.add(line);
+    } else {
+      LOG.warn("Invalid bridge line supplied, ignoring...");
+    }
   }
 
   private synchronized boolean startWithRepeat(final int secondsBeforeTimeOut, final int numberOfRetries)
@@ -275,7 +289,8 @@ public abstract class TorManager {
         continue;
       }
       if (service.key.equals(HS_DIR) && service.value.equals(hiddenServiceDirectory)) {
-        throw new IOException("Hidden Service " + hiddenServiceDirectory.getCanonicalPath() + " is already published");
+        throw new IOException(
+            "Hidden Service " + hiddenServiceDirectory.getCanonicalPath() + " is already published");
       }
       config.add(service.key + " " + service.value);
     }
@@ -527,7 +542,12 @@ public abstract class TorManager {
     final String torPath = onionProxyContext.getTorExecutableFile().getAbsolutePath();
     final String configPath = onionProxyContext.getTorrcFile().getAbsolutePath();
     final String pid = onionProxyContext.getProcessId();
-    final String[] cmd = { torPath, "-f", configPath, OWNER, pid };
+    final String[] cmd = {
+        torPath,
+        "-f",
+        configPath,
+        OWNER,
+        pid };
     final ProcessBuilder processBuilder = new ProcessBuilder(cmd);
     onionProxyContext.setEnvironmentArgsAndWorkingDirectoryForStart(processBuilder);
     Process torProcess = null;
@@ -615,7 +635,8 @@ public abstract class TorManager {
     return onionProxyContext.getWorkingDirectory();
   }
 
-  protected void eatStream(final InputStream inputStream, final boolean stdError, final CountDownLatch countDownLatch) {
+  protected void eatStream(final InputStream inputStream, final boolean stdError,
+      final CountDownLatch countDownLatch) {
     new Thread() {
       @Override
       public void run() {
@@ -677,12 +698,13 @@ public abstract class TorManager {
       // For some reason the GeoIP's location can only be given as a file
       // name, not a path and it has
       // to be in the data directory so we need to set both
-      confWriter.println(DIRECTIVE_DATA_DIRECTORY + onionProxyContext.getWorkingDirectory().getAbsolutePath());
+      confWriter
+          .println(DIRECTIVE_DATA_DIRECTORY + onionProxyContext.getWorkingDirectory().getAbsolutePath());
       confWriter.println(DIRECTIVE_GEOIP_FILE + onionProxyContext.getGeoIpFile().getName());
       confWriter.println(DIRECTIVE_GEOIP6_FILE + onionProxyContext.getGeoIpv6File().getName());
 
-      try (final BufferedReader in = new BufferedReader(
-          new InputStreamReader(onionProxyContext.getAssetOrResourceByName(onionProxyContext.getPathToRC())))) {
+      try (final BufferedReader in = new BufferedReader(new InputStreamReader(
+          onionProxyContext.getAssetOrResourceByName(onionProxyContext.getPathToRC())))) {
         confWriter.println();
         String line = null;
         while ((line = in.readLine()) != null) {
@@ -705,7 +727,9 @@ public abstract class TorManager {
     if (bridgeLines == null) {
       return;
     }
-    this.bridgeConfig.addAll(bridgeLines);
+    for(final String line:bridgeLines){
+      addBridgeLine(line);
+    }
 
   }
 }
