@@ -1,0 +1,37 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.berndpruenster.jtor</groupId>
+	<artifactId>parent</artifactId>
+	<version>0.1</version>
+	<packaging>pom</packaging>
+	<modules>
+		<module>core</module>
+		<module>native-desktop</module>
+		<module>demo</module>
+	</modules>
+
+	 <licenses>
+        <license>
+            <name>European Union Public Licence</name>
+            <url>https://joinup.ec.europa.eu/community/eupl/og_page/eupl</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.7</source>
+					<target>1.7</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
