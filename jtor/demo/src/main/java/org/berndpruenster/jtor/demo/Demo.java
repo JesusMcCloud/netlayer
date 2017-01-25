@@ -30,11 +30,8 @@ public class Demo {
     demo.port = 10024;
     new JCommander(demo, args);
 
-    final TorManager mgr = new JavaTorManager(new File("tor"), true);
-    if (demo.pathBridges != null) {
-      mgr.setBrigeLines(parseBridgeLines(demo.pathBridges));
-    }
-    mgr.bootstrap();
+    final TorManager mgr = new JavaTorManager(new File("tor"),
+        demo.pathBridges == null ? null : parseBridgeLines(demo.pathBridges));
 
     final HiddenServiceSocket hiddenServiceSocket = new HiddenServiceSocket(mgr, demo.port, "test");
     hiddenServiceSocket.addReadyListener(new HiddenServiceReadyListener() {
@@ -48,8 +45,7 @@ public class Demo {
             @Override
             public void run() {
               try {
-                System.err.println("we'll try and connect to the just-published hidden service in 5 seconds");
-                sleep(5000);
+                System.err.println("we'll try and connect to the just-published hidden service");
                 new TorSocket(mgr, hiddenServiceSocket.getServiceName(), hiddenServiceSocket.getHiddenServicePort());
                 System.err.println("Connected to " + hiddenServiceSocket + ". exiting...");
 

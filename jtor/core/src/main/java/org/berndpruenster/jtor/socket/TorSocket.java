@@ -50,9 +50,6 @@ public class TorSocket extends Socket {
   }
 
   public TorSocket(final TorManager mgr, final String endpoint, final int port, final int numTries) throws IOException {
-    if (!mgr.isReady()) {
-      throw new IOException("Tor is not yet bootstrapped!");
-    }
     this.socket = setupSocket(mgr, endpoint, port, numTries);
   }
 

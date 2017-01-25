@@ -32,15 +32,14 @@ package org.berndpruenster.jtor.mgmt;
 
 import java.io.File;
 import java.io.IOException;
-
-import org.berndpruenster.jtor.mgmt.TorManager;
+import java.util.Collection;
 
 public class JavaTorManager extends TorManager {
   public JavaTorManager(final File workingDirectory) throws IOException {
-    this(workingDirectory,false);
+    this(workingDirectory, null);
   }
 
-  public JavaTorManager(final File workingDirectory, final boolean bootsrapManually) throws IOException {
-    super(new JavaTorContext(workingDirectory),bootsrapManually);
+  public JavaTorManager(final File workingDirectory, final Collection<String> bridgeLines) throws IOException {
+    super(new JavaTorContext(workingDirectory), bridgeLines);
   }
 }

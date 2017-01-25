@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.berndpruenster.jtor.mgmt.HiddenServiceReadyListener;
+import org.berndpruenster.jtor.mgmt.TorCtlException;
 import org.berndpruenster.jtor.mgmt.TorEventHandler;
 import org.berndpruenster.jtor.mgmt.TorManager;
 
@@ -45,20 +46,17 @@ public class HiddenServiceSocket extends ServerSocket {
     return serviceName;
   }
 
-  public HiddenServiceSocket(final TorManager mgr, final int port, final String hsDir) throws IOException {
+  public HiddenServiceSocket(final TorManager mgr, final int port, final String hsDir)
+      throws IOException, TorCtlException {
     this(mgr, port, port, hsDir);
   }
 
-  public HiddenServiceSocket(final TorManager mgr, final int localPort, final int hiddenServicePort,
-      final String hsDir) throws IOException {
+  public HiddenServiceSocket(final TorManager mgr, final int localPort, final int hiddenServicePort, final String hsDir)
+      throws IOException, TorCtlException {
     super();
     this.mgr = mgr;
-    if (!mgr.isReady()) {
-      throw new IOException("Tor is not yet bootstrapped!");
-    }
     this.listeners = new LinkedList<>();
-    final Entry<String, TorEventHandler> helper = mgr.publishHiddenService(hsDir, hiddenServicePort,
-        localPort);
+    final Entry<String, TorEventHandler> helper = mgr.publishHiddenService(hsDir, hiddenServicePort, localPort);
     this.serviceName = helper.getKey();
     this.hiddenServiceDirectory = hsDir;
     this.hiddenServicePort = hiddenServicePort;
@@ -86,14 +84,18 @@ public class HiddenServiceSocket extends ServerSocket {
 
   @Override
   public String toString() {
-    return new StringBuilder(serviceName).append(":").append(hiddenServicePort).append(" on ")
-        .append(getLocalPort()).toString();
+    return new StringBuilder(serviceName).append(":").append(hiddenServicePort).append(":").append(getLocalPort())
+        .toString();
   }
 
   @Override
   public void close() throws IOException {
     super.close();
-    mgr.unpublishHiddenService(getHiddenServiceDirectory());
+    try {
+      mgr.unpublishHiddenService(getHiddenServiceDirectory());
+    } catch (final TorCtlException e) {
+      throw new IOException(e);
+    }
   }
 
 }

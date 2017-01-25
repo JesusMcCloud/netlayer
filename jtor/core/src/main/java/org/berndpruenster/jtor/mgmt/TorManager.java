@@ -53,6 +53,7 @@ import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,7 +99,7 @@ public abstract class TorManager {
   private static final int              HOSTNAME_TIMEOUT           = 30 * 1000;                                       // Milliseconds
   private static final Logger           LOG                        = LoggerFactory.getLogger(TorManager.class);
 
-  protected final TorContext            onionProxyContext;
+  protected final TorContext            context;
 
   private final List<String>            bridgeConfig;
 
@@ -114,25 +115,26 @@ public abstract class TorManager {
 
   private final TorEventHandler         eventHandler;
 
-  protected TorManager(final TorContext onionProxyContext, final boolean bootsrapManually) throws IOException {
-    this.onionProxyContext = onionProxyContext;
-    eventHandler = new TorEventHandler();
-    bridgeConfig = new LinkedList<>();
-    if (!bootsrapManually) {
-      bootstrap();
-    }
+  private final AtomicBoolean                       dead;
+
+  protected TorManager(final TorContext torContext) throws IOException {
+    this(torContext, null);
   }
 
-  public void addBridgeLine(final String line) throws IOException {
-    if (isReady()) {
-      throw new IOException("Tor is already bootstrapped!");
-    }
+  protected TorManager(final TorContext torContext, final Collection<String> bridgeLines) throws IOException {
+    this.context = torContext;
+    eventHandler = new TorEventHandler();
+    bridgeConfig = new LinkedList<>();
+    setBrigeLines(bridgeLines);
+    bootstrap();
+    dead = new AtomicBoolean(false);
+  }
+
+  private void addBridgeLine(final String line) {
     if (line.length() > 10) {
-      synchronized (bridgeConfig) {
-        bridgeConfig.add(line);
-      }
+      bridgeConfig.add(line);
     } else {
-      LOG.warn("Invalid bridge line supplied, ignoring...");
+      LOG.warn("Invalid bridge line " + line + " supplied, ignoring...");
     }
   }
 
@@ -172,7 +174,7 @@ public abstract class TorManager {
         // So our compromise is that we try to start the Tor OP 'as is' on the
         // first round and after that
         // we delete all the files.
-        onionProxyContext.deleteAllFilesButHiddenServices();
+        context.deleteAllFilesButHiddenServices();
       }
 
       return false;
@@ -185,7 +187,7 @@ public abstract class TorManager {
     }
   }
 
-  public synchronized void bootstrap() throws IOException {
+  private void bootstrap() throws IOException {
     if (isReady()) {
       return;
     }
@@ -215,7 +217,10 @@ public abstract class TorManager {
     return proxy;
   }
 
-  public Socks5Proxy getProxy() {
+  public Socks5Proxy getProxy() throws TorCtlException {
+    if (dead.get()) {
+      throw new TorCtlException("This Tor instance is shut down!");
+    }
     return proxy;
   }
 
@@ -257,16 +262,20 @@ public abstract class TorManager {
    * @return The hidden service's onion address in the form X.onion.
    * @throws java.io.IOException
    *           - File errors
+   * @throws TorCtlException
    */
   public synchronized Entry<String, TorEventHandler> publishHiddenService(final String hsDir,
-      final int hiddenServicePort, final int localPort) throws IOException {
+      final int hiddenServicePort, final int localPort) throws TorCtlException, IOException {
+    if (dead.get()) {
+      throw new TorCtlException("This Tor instance is shut down!");
+    }
     if (controlConnection == null) {
       throw new RuntimeException("Service is not running.");
     }
 
     final List<ConfigEntry> currentHiddenServices = controlConnection.getConf(HS_OPTS);
 
-    final File hiddenServiceDirectory = onionProxyContext.getHiddenServiceDirectory(hsDir);
+    final File hiddenServiceDirectory = context.getHiddenServiceDirectory(hsDir);
 
     final List<String> config = new LinkedList<>();
 
@@ -275,20 +284,21 @@ public abstract class TorManager {
         continue;
       }
       if (service.key.equals(HS_DIR) && service.value.equals(hiddenServiceDirectory)) {
-        throw new IOException("Hidden Service " + hiddenServiceDirectory.getCanonicalPath() + " is already published");
+        throw new TorCtlException(
+            "Hidden Service " + hiddenServiceDirectory.getCanonicalPath() + " is already published");
       }
       config.add(service.key + " " + service.value);
     }
 
     LOG.debug("Creating hidden service " + hsDir);
-    final File hostnameFile = onionProxyContext.getHostNameFile(hsDir);
+    final File hostnameFile = context.getHostNameFile(hsDir);
 
     if (!(hostnameFile.getParentFile().exists() || hostnameFile.getParentFile().mkdirs())) {
-      throw new RuntimeException("Could not create hostnameFile parent directory");
+      throw new TorCtlException("Could not create hostnameFile parent directory");
     }
 
     if (!(hostnameFile.exists() || hostnameFile.createNewFile())) {
-      throw new RuntimeException("Could not create hostnameFile");
+      throw new TorCtlException("Could not create hostnameFile");
     }
     // Thanks, Ubuntu!
     try {
@@ -313,7 +323,7 @@ public abstract class TorManager {
 
     controlConnection.setEvents(Arrays.asList(EVENTS_HS));
     // Watch for the hostname file being created/updated
-    final WriteObserver hostNameFileObserver = onionProxyContext.generateWriteObserver(hostnameFile);
+    final WriteObserver hostNameFileObserver = context.generateWriteObserver(hostnameFile);
     // Use the control connection to update the Tor config
     config.addAll(Arrays.asList(HS_DIR + " " + hostnameFile.getParentFile().getCanonicalPath(),
         HS_PORT + " " + hiddenServicePort + " " + LOCAL_IP + ":" + localPort));
@@ -332,9 +342,12 @@ public abstract class TorManager {
     return new HelperContainer(hostname, eventHandler);
   }
 
-  public synchronized void unpublishHiddenService(final String hsDir) throws IOException {
+  public synchronized void unpublishHiddenService(final String hsDir) throws TorCtlException, IOException {
+    if (dead.get()) {
+      throw new TorCtlException("This Tor instance is shut down!");
+    }
     final List<ConfigEntry> currentHiddenServices = controlConnection.getConf(HS_OPTS);
-    final File hiddenServiceDirectory = onionProxyContext.getHiddenServiceDirectory(hsDir);
+    final File hiddenServiceDirectory = context.getHiddenServiceDirectory(hsDir);
     final List<String> conf = new LinkedList<>();
     boolean removeNext = false;
     for (final ConfigEntry service : currentHiddenServices) {
@@ -360,13 +373,12 @@ public abstract class TorManager {
   }
 
   public synchronized boolean isHiddenServiceAvailable(final String onionurl) throws TorCtlException {
-    if (!isReady()) {
-      throw new TorCtlException("Tor has not yet bootstrapped");
+    if (dead.get()) {
+      throw new TorCtlException("This Tor instance is shut down!");
     }
     try {
       return controlConnection.isHSAvailable(onionurl.substring(0, onionurl.indexOf(".")));
     } catch (final IOException e) {
-      // We'll have to wait for tor 0.2.7
       e.printStackTrace();
       System.err.println("We'll have to wait for Tor 0.2.7 for HSFETCH to work!");
     }
@@ -381,6 +393,10 @@ public abstract class TorManager {
    *           - File errors
    */
   public synchronized void shutdown() throws IOException {
+    if (dead.get()) {
+      LOG.warn("This Tor instance is already shut down!");
+    }
+    dead.set(true);
     try {
       if (controlConnection == null) {
         return;
@@ -405,7 +421,7 @@ public abstract class TorManager {
    * @throws java.io.IOException
    *           - IO exceptions
    */
-  public synchronized boolean isReady() {
+  private boolean isReady() {
     try {
       return isBootstrapped() && isNetworkEnabled();
     } catch (final TorCtlException e) {
@@ -515,7 +531,7 @@ public abstract class TorManager {
     installAndConfigureFiles();
 
     LOG.info("Starting Tor");
-    final File cookieFile = onionProxyContext.getCookieFile();
+    final File cookieFile = context.getCookieFile();
     if (!cookieFile.getParentFile().exists() && !cookieFile.getParentFile().mkdirs()) {
       throw new RuntimeException("Could not create cookieFile parent directory");
     }
@@ -529,16 +545,16 @@ public abstract class TorManager {
       throw new RuntimeException("Could not create cookieFile");
     }
 
-    final File workingDirectory = onionProxyContext.getWorkingDirectory();
+    final File workingDirectory = context.getWorkingDirectory();
     // Watch for the auth cookie file being created/updated
-    final WriteObserver cookieObserver = onionProxyContext.generateWriteObserver(cookieFile);
+    final WriteObserver cookieObserver = context.generateWriteObserver(cookieFile);
     // Start a new Tor process
-    final String torPath = onionProxyContext.getTorExecutableFile().getAbsolutePath();
-    final String configPath = onionProxyContext.getTorrcFile().getAbsolutePath();
-    final String pid = onionProxyContext.getProcessId();
+    final String torPath = context.getTorExecutableFile().getAbsolutePath();
+    final String configPath = context.getTorrcFile().getAbsolutePath();
+    final String pid = context.getProcessId();
     final String[] cmd = { torPath, "-f", configPath, OWNER, pid };
     final ProcessBuilder processBuilder = new ProcessBuilder(cmd);
-    onionProxyContext.setEnvironmentArgsAndWorkingDirectoryForStart(processBuilder);
+    context.setEnvironmentArgsAndWorkingDirectoryForStart(processBuilder);
     Process torProcess = null;
     try {
       // torProcess = Runtime.getRuntime().exec(cmd, env,
@@ -621,7 +637,7 @@ public abstract class TorManager {
    * @return Working directory for Tor Onion Proxy files
    */
   public File getWorkingDirectory() {
-    return onionProxyContext.getWorkingDirectory();
+    return context.getWorkingDirectory();
   }
 
   protected void eatStream(final InputStream inputStream, final boolean stdError, final CountDownLatch countDownLatch) {
@@ -665,7 +681,7 @@ public abstract class TorManager {
   }
 
   protected void installAndConfigureFiles() throws IOException, InterruptedException {
-    onionProxyContext.installFiles();
+    context.installFiles();
 
     // if (!onionProxyContext.getTorExecutableFile().setExecutable(true)) {
     // throw new RuntimeException("could not make Tor executable.");
@@ -680,18 +696,18 @@ public abstract class TorManager {
     // than track it down we just tell Tor where to put it.
     // PrintWriter printWriter = null;
     try (final PrintWriter confWriter = new PrintWriter(
-        new BufferedWriter(new FileWriter(onionProxyContext.getTorrcFile(), true)))) {
+        new BufferedWriter(new FileWriter(context.getTorrcFile(), true)))) {
       confWriter.println();
-      confWriter.println(DIRECTIVE_COOKIE_AUTH_FILE + onionProxyContext.getCookieFile().getAbsolutePath());
+      confWriter.println(DIRECTIVE_COOKIE_AUTH_FILE + context.getCookieFile().getAbsolutePath());
       // For some reason the GeoIP's location can only be given as a file
       // name, not a path and it has
       // to be in the data directory so we need to set both
-      confWriter.println(DIRECTIVE_DATA_DIRECTORY + onionProxyContext.getWorkingDirectory().getAbsolutePath());
-      confWriter.println(DIRECTIVE_GEOIP_FILE + onionProxyContext.getGeoIpFile().getName());
-      confWriter.println(DIRECTIVE_GEOIP6_FILE + onionProxyContext.getGeoIpv6File().getName());
+      confWriter.println(DIRECTIVE_DATA_DIRECTORY + context.getWorkingDirectory().getAbsolutePath());
+      confWriter.println(DIRECTIVE_GEOIP_FILE + context.getGeoIpFile().getName());
+      confWriter.println(DIRECTIVE_GEOIP6_FILE + context.getGeoIpv6File().getName());
 
       try (final BufferedReader in = new BufferedReader(
-          new InputStreamReader(onionProxyContext.getAssetOrResourceByName(onionProxyContext.getPathToRC())))) {
+          new InputStreamReader(context.getAssetOrResourceByName(context.getPathToRC())))) {
         confWriter.println();
         String line = null;
         while ((line = in.readLine()) != null) {
@@ -710,7 +726,7 @@ public abstract class TorManager {
     }
   }
 
-  public void setBrigeLines(final Collection<String> bridgeLines) throws IOException {
+  private void setBrigeLines(final Collection<String> bridgeLines) throws IOException {
     if (bridgeLines == null) {
       return;
     }
