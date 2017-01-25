@@ -9,7 +9,7 @@ import java.util.LinkedList;
 import java.util.Scanner;
 
 import org.berndpruenster.jtor.mgmt.HiddenServiceReadyListener;
-import org.berndpruenster.jtor.mgmt.JavaTorManager;
+import org.berndpruenster.jtor.mgmt.DesktopTorManager;
 import org.berndpruenster.jtor.mgmt.TorManager;
 import org.berndpruenster.jtor.socket.HiddenServiceSocket;
 import org.berndpruenster.jtor.socket.TorSocket;
@@ -30,7 +30,7 @@ public class Demo {
     demo.port = 10024;
     new JCommander(demo, args);
 
-    final TorManager mgr = new JavaTorManager(new File("tor"),
+    final TorManager mgr = new DesktopTorManager(new File("tor"),
         demo.pathBridges == null ? null : parseBridgeLines(demo.pathBridges));
 
     final HiddenServiceSocket hiddenServiceSocket = new HiddenServiceSocket(mgr, demo.port, "test");

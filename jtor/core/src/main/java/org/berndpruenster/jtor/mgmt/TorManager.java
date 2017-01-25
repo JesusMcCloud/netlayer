@@ -53,7 +53,6 @@ import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -115,8 +114,6 @@ public abstract class TorManager {
 
   private final TorEventHandler         eventHandler;
 
-  private final AtomicBoolean                       dead;
-
   protected TorManager(final TorContext torContext) throws IOException {
     this(torContext, null);
   }
@@ -127,7 +124,6 @@ public abstract class TorManager {
     bridgeConfig = new LinkedList<>();
     setBrigeLines(bridgeLines);
     bootstrap();
-    dead = new AtomicBoolean(false);
   }
 
   private void addBridgeLine(final String line) {
@@ -149,7 +145,7 @@ public abstract class TorManager {
         if (!installAndStartTorOp()) {
           return false;
         }
-        enableNetwork(true);
+        enableNetwork();
 
         // We will check every second to see if boot strapping has
         // finally finished
@@ -181,16 +177,13 @@ public abstract class TorManager {
     } finally {
       // Make sure we return the Tor OP in some kind of consistent state,
       // even if it's 'off'.
-      if (!isReady()) {
+      if (!isBootstrapped()) {
         shutdown();
       }
     }
   }
 
   private void bootstrap() throws IOException {
-    if (isReady()) {
-      return;
-    }
     try {
       if (!startWithRepeat(TOTAL_SEC_PER_STARTUP, TRIES_PER_STARTUP)) {
         throw new IOException("Could not Start Tor. Is another instance already running?");
@@ -212,13 +205,13 @@ public abstract class TorManager {
   }
 
   private Socks5Proxy setupProxy() throws IOException {
-    final Socks5Proxy proxy = new Socks5Proxy(LOCAL_IP, getIPv4LocalHostSocksPort());
+    final Socks5Proxy proxy = new Socks5Proxy(LOCAL_IP, getSocksPort());
     proxy.resolveAddrLocally(false);
     return proxy;
   }
 
-  public Socks5Proxy getProxy() throws TorCtlException {
-    if (dead.get()) {
+  public synchronized Socks5Proxy getProxy() throws TorCtlException {
+    if (controlConnection == null) {
       throw new TorCtlException("This Tor instance is shut down!");
     }
     return proxy;
@@ -232,11 +225,7 @@ public abstract class TorManager {
    * @throws java.io.IOException
    *           - File errors
    */
-  private int getIPv4LocalHostSocksPort() throws IOException {
-    if (!isReady()) {
-      throw new RuntimeException("Tor is not running!");
-    }
-
+  private int getSocksPort() throws IOException {
     // This returns a set of space delimited quoted strings which could be
     // Ipv4, Ipv6 or unix sockets
     final String[] socksIpPorts = controlConnection.getInfo(NET_LISTENERS_SOCKS).split(" ");
@@ -266,11 +255,8 @@ public abstract class TorManager {
    */
   public synchronized Entry<String, TorEventHandler> publishHiddenService(final String hsDir,
       final int hiddenServicePort, final int localPort) throws TorCtlException, IOException {
-    if (dead.get()) {
-      throw new TorCtlException("This Tor instance is shut down!");
-    }
     if (controlConnection == null) {
-      throw new RuntimeException("Service is not running.");
+      throw new TorCtlException("Tor is not running.");
     }
 
     final List<ConfigEntry> currentHiddenServices = controlConnection.getConf(HS_OPTS);
@@ -343,8 +329,8 @@ public abstract class TorManager {
   }
 
   public synchronized void unpublishHiddenService(final String hsDir) throws TorCtlException, IOException {
-    if (dead.get()) {
-      throw new TorCtlException("This Tor instance is shut down!");
+    if (controlConnection == null) {
+      throw new TorCtlException("Tor is not running.");
     }
     final List<ConfigEntry> currentHiddenServices = controlConnection.getConf(HS_OPTS);
     final File hiddenServiceDirectory = context.getHiddenServiceDirectory(hsDir);
@@ -373,8 +359,8 @@ public abstract class TorManager {
   }
 
   public synchronized boolean isHiddenServiceAvailable(final String onionurl) throws TorCtlException {
-    if (dead.get()) {
-      throw new TorCtlException("This Tor instance is shut down!");
+    if (controlConnection == null) {
+      throw new TorCtlException("Tor is not running.");
     }
     try {
       return controlConnection.isHSAvailable(onionurl.substring(0, onionurl.indexOf(".")));
@@ -393,10 +379,6 @@ public abstract class TorManager {
    *           - File errors
    */
   public synchronized void shutdown() throws IOException {
-    if (dead.get()) {
-      LOG.warn("This Tor instance is already shut down!");
-    }
-    dead.set(true);
     try {
       if (controlConnection == null) {
         return;
@@ -414,24 +396,6 @@ public abstract class TorManager {
   }
 
   /**
-   * Checks to see if the Tor OP is running (e.g. fully bootstrapped) and open
-   * to network connections.
-   *
-   * @return True if running
-   * @throws java.io.IOException
-   *           - IO exceptions
-   */
-  private boolean isReady() {
-    try {
-      return isBootstrapped() && isNetworkEnabled();
-    } catch (final TorCtlException e) {
-      LOG.warn(e.getMessage());
-      return false;
-
-    }
-  }
-
-  /**
    * Tells the Tor OP if it should accept network connections
    *
    * @param enable
@@ -440,45 +404,12 @@ public abstract class TorManager {
    * @throws java.io.IOException
    *           - IO exceptions
    */
-  private void enableNetwork(final boolean enable) throws IOException {
+  private void enableNetwork() throws IOException {
     if (controlConnection == null) {
       throw new RuntimeException("Tor is not running!");
     }
-    LOG.info("Enabling network: " + enable);
-    controlConnection.setConf(DISABLE_NETWORK, enable ? "0" : "1");
-  }
-
-  /**
-   * Specifies if Tor OP is accepting network connections
-   *
-   * @return True if network is enabled (that doesn't mean that the device is
-   *         online, only that the Tor OP is trying to connect to the network)
-   * @throws java.io.IOException
-   *           - IO exceptions
-   */
-  private boolean isNetworkEnabled() throws TorCtlException {
-    if (controlConnection == null) {
-      throw new TorCtlException("Tor is not running!");
-    }
-
-    List<ConfigEntry> disableNetworkSettingValues;
-    try {
-      disableNetworkSettingValues = controlConnection.getConf(DISABLE_NETWORK);
-    } catch (final IOException e) {
-      throw new TorCtlException(e);
-    }
-    boolean result = false;
-    // It's theoretically possible for us to get multiple values back, if
-    // even one is false then we will
-    // assume all are false
-    for (final ConfigEntry configEntry : disableNetworkSettingValues) {
-      if (configEntry.value.equals("1")) {
-        return false;
-      } else {
-        result = true;
-      }
-    }
-    return result;
+    LOG.debug("Enabling network");
+    controlConnection.setConf(DISABLE_NETWORK, "0");
   }
 
   private boolean isBootstrapped() {

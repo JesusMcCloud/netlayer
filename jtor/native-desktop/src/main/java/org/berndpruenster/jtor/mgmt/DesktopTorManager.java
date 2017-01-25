@@ -34,12 +34,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 
-public class JavaTorManager extends TorManager {
-  public JavaTorManager(final File workingDirectory) throws IOException {
+public class DesktopTorManager extends TorManager {
+  public DesktopTorManager(final File workingDirectory) throws IOException {
     this(workingDirectory, null);
   }
 
-  public JavaTorManager(final File workingDirectory, final Collection<String> bridgeLines) throws IOException {
+  public DesktopTorManager(final File workingDirectory, final Collection<String> bridgeLines) throws IOException {
     super(new JavaTorContext(workingDirectory), bridgeLines);
   }
 }
