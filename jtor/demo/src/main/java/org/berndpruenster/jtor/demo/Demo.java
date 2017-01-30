@@ -8,8 +8,8 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Scanner;
 
-import org.berndpruenster.jtor.mgmt.HiddenServiceReadyListener;
 import org.berndpruenster.jtor.mgmt.DesktopTorManager;
+import org.berndpruenster.jtor.mgmt.HiddenServiceReadyListener;
 import org.berndpruenster.jtor.mgmt.TorManager;
 import org.berndpruenster.jtor.socket.HiddenServiceSocket;
 import org.berndpruenster.jtor.socket.TorSocket;
@@ -46,8 +46,12 @@ public class Demo {
             public void run() {
               try {
                 System.err.println("we'll try and connect to the just-published hidden service");
-                new TorSocket(mgr, hiddenServiceSocket.getServiceName(), hiddenServiceSocket.getHiddenServicePort());
+                new TorSocket(mgr, hiddenServiceSocket.getServiceName(), hiddenServiceSocket.getHiddenServicePort(),"Foo");
                 System.err.println("Connected to " + hiddenServiceSocket + ". exiting...");
+                new TorSocket(mgr, "www.google.com", 80,"FOO");
+                new TorSocket(mgr, "www.cnn.com", 80,"BAR");
+                new TorSocket(mgr, "www.google.com", 80,"BAZ");
+
 
               } catch (final Exception e1) {
                 e1.printStackTrace();

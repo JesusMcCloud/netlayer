@@ -40,9 +40,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.attribute.PosixFilePermission;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -57,6 +60,7 @@ import java.util.concurrent.CountDownLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.runjva.sourceforge.jsocks.protocol.Authentication;
 import com.runjva.sourceforge.jsocks.protocol.Socks5Proxy;
 
 import net.freehaven.tor.control.ConfigEntry;
@@ -102,8 +106,6 @@ public abstract class TorManager {
 
   private final List<String>            bridgeConfig;
 
-  private Socks5Proxy                   proxy;
-
   private volatile Socket               controlSocket              = null;
 
   // If controlConnection is not null then this means that a connection exists
@@ -113,6 +115,8 @@ public abstract class TorManager {
   private volatile int                  controlPort;
 
   private final TorEventHandler         eventHandler;
+
+  private int                           socksPort;
 
   protected TorManager(final TorContext torContext) throws IOException {
     this(torContext, null);
@@ -188,7 +192,7 @@ public abstract class TorManager {
       if (!startWithRepeat(TOTAL_SEC_PER_STARTUP, TRIES_PER_STARTUP)) {
         throw new IOException("Could not Start Tor. Is another instance already running?");
       }
-      this.proxy = setupProxy();
+      this.socksPort = getSocksPort();
       Runtime.getRuntime().addShutdownHook(new Thread() {
         @Override
         public void run() {
@@ -204,15 +208,44 @@ public abstract class TorManager {
     }
   }
 
-  private Socks5Proxy setupProxy() throws IOException {
-    final Socks5Proxy proxy = new Socks5Proxy(LOCAL_IP, getSocksPort());
-    proxy.resolveAddrLocally(false);
-    return proxy;
-  }
-
-  public synchronized Socks5Proxy getProxy() throws TorCtlException {
+  public synchronized Socks5Proxy getProxy(final String streamID) throws TorCtlException {
     if (controlConnection == null) {
       throw new TorCtlException("This Tor instance is shut down!");
+    }
+    final Socks5Proxy proxy;
+    try {
+      proxy = new Socks5Proxy(LOCAL_IP, socksPort);
+    } catch (final IOException e) {
+      throw new TorCtlException(e);
+    }
+    proxy.resolveAddrLocally(false);
+    if (streamID != null) {
+      final byte[] hash;
+      final String authValue;
+      try {
+        authValue = new BigInteger(MessageDigest.getInstance("MD5").digest(streamID.getBytes())).toString();
+        hash = authValue.getBytes();
+      } catch (final NoSuchAlgorithmException e) {
+        throw new TorCtlException(e);
+      }
+      proxy.setAuthenticationMethod(2, new Authentication() {
+
+        @Override
+        public Object[] doSocksAuthentication(final int methodId, final Socket proxySocket) throws IOException {
+          LOG.debug("auth'ing using " + authValue);
+          proxySocket.getOutputStream().write(new byte[] { (byte) 1, (byte) hash.length });
+          proxySocket.getOutputStream().write(hash);
+          proxySocket.getOutputStream().write(new byte[] { (byte) 1, (byte) 0 });
+          proxySocket.getOutputStream().flush();
+          final byte[] status = new byte[2];
+          // System.out.println("RD: " +
+          proxySocket.getInputStream().read(status);
+          if (status[1] != 0) {
+            throw new IOException("auth error: " + status[1]);
+          }
+          return new Object[] { proxySocket.getInputStream(), proxySocket.getOutputStream() };
+        }
+      });
     }
     return proxy;
   }

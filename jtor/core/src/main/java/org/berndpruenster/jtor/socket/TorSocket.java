@@ -46,20 +46,31 @@ public class TorSocket extends Socket {
   private final Socket        socket;
 
   public TorSocket(final TorManager mgr, final String endpoint, final int port) throws IOException {
-    this(mgr, endpoint, port, 5);
+    this(mgr, endpoint, port, 5, null);
+  }
+
+  public TorSocket(final TorManager mgr, final String endpoint, final int port, final String streamID)
+      throws IOException {
+    this(mgr, endpoint, port, 5, streamID);
   }
 
   public TorSocket(final TorManager mgr, final String endpoint, final int port, final int numTries) throws IOException {
-    this.socket = setupSocket(mgr, endpoint, port, numTries);
+    this(mgr, endpoint, port, numTries, null);
   }
 
-  private SocksSocket setupSocket(final TorManager mgr, final String onionUrl, final int port, final int numTries)
-      throws IOException {
+  public TorSocket(final TorManager mgr, final String endpoint, final int port, final int numTries,
+      final String streamID) throws IOException {
+    this.socket = setupSocket(mgr, endpoint, port, numTries, streamID);
+  }
+
+  private SocksSocket setupSocket(final TorManager mgr, final String onionUrl, final int port, final int numTries,
+      final String streamID) throws IOException {
     final long before = Calendar.getInstance().getTimeInMillis();
     for (int i = 0; i < numTries; ++i) {
       try {
         LOG.debug("trying to connect to  " + onionUrl + ":" + port);
-        final SocksSocket ssock = new SocksSocket(mgr.getProxy(), onionUrl, port);
+        final SocksSocket ssock = new SocksSocket(mgr.getProxy(streamID), onionUrl, port);
+
         LOG.debug("Took " + (Calendar.getInstance().getTimeInMillis() - before) + " milliseconds to connect to "
             + onionUrl + ":" + port);
         ssock.setTcpNoDelay(true);

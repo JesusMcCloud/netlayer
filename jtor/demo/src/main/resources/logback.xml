@@ -9,6 +9,6 @@
 	<root level="DEBUG">
 		<appender-ref ref="CONSOLE_APPENDER" />
 	</root>
-	<logger name="org.berndpruenster.jtor.mgmt.TorEventHandler" level="INFO"/>
+	<logger name="org.berndpruenster.jtor.mgmt.TorEventHandler" level="DEBUG"/>
 	<logger name="org.berndpruenster.jtor.socket.TorSocket" level="DEBUG"/>
 </configuration>
