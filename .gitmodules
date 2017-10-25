@@ -1,6 +1,0 @@
-[submodule "jtorctl"]
-	path = jtorctl
-	url = https://github.com/JesusMcCloud/jtorctl
-[submodule "jsocks"]
-	path = jsocks
-	url = https://github.com/ravn/jsocks

@@ -15,3 +15,7 @@ hs_err_pid*
 .project
 .settings/
 
+.idea
+*.iml
+.settings
+tor-demo
