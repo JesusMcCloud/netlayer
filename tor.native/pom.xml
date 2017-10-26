@@ -3,24 +3,56 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.berndpruenster.netlayer</groupId>
-    <artifactId>parent</artifactId>
-      <version>${netlayer.version}</version>
-  </parent>
- 
-  <artifactId>tor.native</artifactId>
-  <packaging>jar</packaging>
+    <parent>
+        <groupId>org.berndpruenster.netlayer</groupId>
+        <artifactId>parent</artifactId>
+        <version>${netlayer.version}</version>
+    </parent>
+
+    <artifactId>tor.native</artifactId>
+    <packaging>jar</packaging>
 
     <name>Tor Native Files</name>
 
-  
-
+    <repositories>
+        <repository>
+            <id>test</id>
+            <url>file:///home/jesus/Documents/tuGraz/DISS/ext/tor-binary/release</url>
+        </repository>
+    </repositories>
     <dependencies>
         <dependency>
             <groupId>org.berndpruenster.netlayer</groupId>
             <artifactId>tor</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.cedricwalter</groupId>
+            <artifactId>tor-binary-macos</artifactId>
+            <version>${tor-binary.version}</version>
+            <type>tar.xz</type>
+            <classifier>bin</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.cedricwalter</groupId>
+            <artifactId>tor-binary-linux32</artifactId>
+            <version>${tor-binary.version}</version>
+            <type>tar.xz</type>
+            <classifier>bin</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.cedricwalter</groupId>
+            <artifactId>tor-binary-linux64</artifactId>
+            <version>${tor-binary.version}</version>
+            <type>tar.xz</type>
+            <classifier>bin</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.cedricwalter</groupId>
+            <artifactId>tor-binary-windows</artifactId>
+            <version>${tor-binary.version}</version>
+            <type>tar.xz</type>
+            <classifier>bin</classifier>
         </dependency>
         <dependency>
             <groupId>com.beust</groupId>
@@ -38,6 +70,68 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.cedricwalter</groupId>
+                                    <artifactId>tor-binary-linux32</artifactId>
+                                    <version>${tor-binary.version}</version>
+                                    <type>tar.xz</type>
+                                    <classifier>bin</classifier>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}/classes/native/linux/x86
+                                    </outputDirectory>
+                                    <destFileName>tor.tar.xz</destFileName>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.cedricwalter</groupId>
+                                    <artifactId>tor-binary-linux64</artifactId>
+                                    <version>${tor-binary.version}</version>
+                                    <type>tar.xz</type>
+                                    <classifier>bin</classifier>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}/classes/native/linux/x64
+                                    </outputDirectory>
+                                    <destFileName>tor.tar.xz</destFileName>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.cedricwalter</groupId>
+                                    <artifactId>tor-binary-macos</artifactId>
+                                    <version>${tor-binary.version}</version>
+                                    <type>tar.xz</type>
+                                    <classifier>bin</classifier>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}/classes/native/osx/x64
+                                    </outputDirectory>
+                                    <destFileName>tor.tar.xz</destFileName>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.cedricwalter</groupId>
+                                    <artifactId>tor-binary-windows</artifactId>
+                                    <version>${tor-binary.version}</version>
+                                    <type>tar.xz</type>
+                                    <classifier>bin</classifier>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}/classes/native/windows/x86
+                                    </outputDirectory>
+                                    <destFileName>tor.tar.xz</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <artifactId>kotlin-maven-plugin</artifactId>
                 <groupId>org.jetbrains.kotlin</groupId>
