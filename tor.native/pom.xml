@@ -6,12 +6,11 @@
     <parent>
         <groupId>org.berndpruenster.netlayer</groupId>
         <artifactId>parent</artifactId>
-        <version>${netlayer.version}</version>
+        <version>0.2</version>
     </parent>
 
     <artifactId>tor.native</artifactId>
     <packaging>jar</packaging>
-
     <name>Tor Native Files</name>
 
     <repositories>
@@ -89,7 +88,8 @@
                                     <type>tar.xz</type>
                                     <classifier>bin</classifier>
                                     <overWrite>false</overWrite>
-                                    <outputDirectory>${project.build.directory}/classes/native/linux/x86</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/classes/native/linux/x86
+                                    </outputDirectory>
                                     <destFileName>tor.tar.xz</destFileName>
                                 </artifactItem>
                                 <artifactItem>
@@ -99,7 +99,8 @@
                                     <type>tar.xz</type>
                                     <classifier>bin</classifier>
                                     <overWrite>false</overWrite>
-                                    <outputDirectory>${project.build.directory}/classes/native/linux/x64</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/classes/native/linux/x64
+                                    </outputDirectory>
                                     <destFileName>tor.tar.xz</destFileName>
                                 </artifactItem>
                                 <artifactItem>
@@ -119,7 +120,8 @@
                                     <type>tar.xz</type>
                                     <classifier>bin</classifier>
                                     <overWrite>false</overWrite>
-                                    <outputDirectory>${project.build.directory}/classes/native/windows/x86</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/classes/native/windows/x86
+                                    </outputDirectory>
                                     <destFileName>tor.tar.xz</destFileName>
                                 </artifactItem>
                             </artifactItems>
