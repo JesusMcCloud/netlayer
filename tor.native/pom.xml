@@ -89,8 +89,7 @@
                                     <type>tar.xz</type>
                                     <classifier>bin</classifier>
                                     <overWrite>false</overWrite>
-                                    <outputDirectory>${project.build.directory}/classes/native/linux/x86
-                                    </outputDirectory>
+                                    <outputDirectory>${project.build.directory}/classes/native/linux/x86</outputDirectory>
                                     <destFileName>tor.tar.xz</destFileName>
                                 </artifactItem>
                                 <artifactItem>
@@ -100,8 +99,7 @@
                                     <type>tar.xz</type>
                                     <classifier>bin</classifier>
                                     <overWrite>false</overWrite>
-                                    <outputDirectory>${project.build.directory}/classes/native/linux/x64
-                                    </outputDirectory>
+                                    <outputDirectory>${project.build.directory}/classes/native/linux/x64</outputDirectory>
                                     <destFileName>tor.tar.xz</destFileName>
                                 </artifactItem>
                                 <artifactItem>
@@ -111,8 +109,7 @@
                                     <type>tar.xz</type>
                                     <classifier>bin</classifier>
                                     <overWrite>false</overWrite>
-                                    <outputDirectory>${project.build.directory}/classes/native/osx/x64
-                                    </outputDirectory>
+                                    <outputDirectory>${project.build.directory}/classes/native/osx/x64</outputDirectory>
                                     <destFileName>tor.tar.xz</destFileName>
                                 </artifactItem>
                                 <artifactItem>
@@ -122,8 +119,7 @@
                                     <type>tar.xz</type>
                                     <classifier>bin</classifier>
                                     <overWrite>false</overWrite>
-                                    <outputDirectory>${project.build.directory}/classes/native/windows/x86
-                                    </outputDirectory>
+                                    <outputDirectory>${project.build.directory}/classes/native/windows/x86</outputDirectory>
                                     <destFileName>tor.tar.xz</destFileName>
                                 </artifactItem>
                             </artifactItems>

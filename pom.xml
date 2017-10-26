@@ -16,7 +16,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Maven plugins -->
     <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
-    <netlayer.version>0.2</netlayer.version>
+    <netlayer.version>0.3</netlayer.version>
     <tor-binary.version>7.0.6</tor-binary.version>
   </properties>
   
