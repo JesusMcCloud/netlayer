@@ -11,40 +11,43 @@ This repository currently contains a Kotlin/Java8 Tor Library supporting
 ## Usage
 This is essentially a Wrapper around the official Tor releases, pre-packaged for easiy use and convenient integration into Kotlin/Java Projects.
 As of you, simply add `tor.native` as dependency to your project (using JitPack):
-
+```XML
     <repositories>
     <repository>
         <id>jitpack.io</id>
         <url>https://jitpack.io</url>
     </repository>
     </repositories>
-    …
-    <dependencies>
-        …
-        <dependency>
-            <groupId>org.berndpruenster.netlayer</groupId>
-            <artifactId>tor.native</artifactId>
-            <version>0.3</version>
-        </dependency>
-        …
-    </dependencies>
+```
+```XML
+      <dependency>
+          <groupId>org.berndpruenster.netlayer</groupId>
+          <artifactId>tor.native</artifactId>
+          <version>0.3</version>
+      </dependency>
+```
+
 
 ### Tunneling Traffic through Tor
 This library provides a plain TCP socket which can be used like any other:
 
 #### Kotlin
+```Kotlin
     //set default instance, so it can be omitted whenever creating Tor (Server)Sockets
     //This will take some time
     Tor.default = NativeTor(/*Tor installation destination*/ File("tor-demo"))
     TorSocket("www.google.com", 80, streamId = "FOO" /*this one is optional*/) //clear web
     TorSocket("facebookcorewwwi.onion", 443, streamId = "BAR") //hidden service
+```
 
 #### Java
+```Java
     //set default instance, so it can be omitted whenever creating Tor (Server)Sockets
     //This will take some time
     Tor.setDefault(new NativeTor(/*Tor installation destination*/ new File("tor-demo")));
     new TorSocket("www.google.com", 80, "FOO");
     new TorSocket("facebookcorewwwi.onion", 443, "BAR");
+```
 
 ### Using Bridges and Pluggable Transports
 To use bridges, simply pass the contents of a bridge configuration obtained from https://bridges.torproject.org/ (line-by-line wrapped in a *Collection*) as second parameter to the constructor of the `NativeTor` class.
@@ -53,16 +56,20 @@ To use bridges, simply pass the contents of a bridge configuration obtained from
 Hidden services can be hosted by creating a torified `ServerSocket`.
 
 #### Kotlin
+```Kotlin
     //create a hidden service in directory 'test' inside the tor installation directory
     HiddenServiceSocket(8080, "test")
     //optionally attack a ready listener to be notified as soon as the service becomes reachable
     hiddenServiceSocket.addReadyListener { socket -> /*your code here*/}
+```
 
 #### Java
+```Java
     //create a hidden service in directory 'test' inside the tor installation directory
     HiddenServiceSocket hiddenServiceSocket = new HiddenServiceSocket(8080, "test");
     //it takes some time for a hidden service to be ready, so adding a listener only after creating the HS is not an issue
     hiddenServiceSocket.addReadyListener(socket -> { /*your code here*/ return null});
+```
 
 ## IDE Support
 To use this inside your IDE, be sure that the `generate-resources` lifecycle is invoked before running any code relying on the Tor wrapper (IntelliJ users simply right-click on the `generate-resources` maven lifecycle phase and check both *Execute after Build* and *Execute after Rebuild*).
