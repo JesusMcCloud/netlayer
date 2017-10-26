@@ -4,7 +4,7 @@
 
   <groupId>org.berndpruenster.netlayer</groupId>
   <artifactId>parent</artifactId>
-  <version>${netlayer.version}</version>
+  <version>0.2</version>
   <packaging>pom</packaging>
 
   <name>Netlayer</name>
@@ -18,12 +18,12 @@
     <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
     <netlayer.version>0.2</netlayer.version>
   </properties>
-  
+
     <modules>
     <module>tor</module>
     <module>tor.native</module>
   </modules>
- 
+
   <repositories>
     <repository>
       <id>jitpack.io</id>

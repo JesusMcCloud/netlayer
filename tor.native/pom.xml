@@ -6,15 +6,15 @@
   <parent>
     <groupId>org.berndpruenster.netlayer</groupId>
     <artifactId>parent</artifactId>
-      <version>${netlayer.version}</version>
+      <version>0.2</version>
   </parent>
- 
+
   <artifactId>tor.native</artifactId>
   <packaging>jar</packaging>
 
     <name>Tor Native Files</name>
 
-  
+
 
     <dependencies>
         <dependency>
