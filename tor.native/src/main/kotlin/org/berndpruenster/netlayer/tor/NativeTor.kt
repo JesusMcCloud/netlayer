@@ -52,7 +52,7 @@ private const val PATH_NATIVE = "native/"
 
 private const val OS_UNSUPPORTED = "We don't support Tor on this OS"
 
-class NativeTor(workingDirectory: File, bridgeLines: Collection<String>? = null) : Tor(NativeContext(workingDirectory),
+class NativeTor @Throws(TorCtlException::class) constructor(workingDirectory: File, bridgeLines: Collection<String>? = null) : Tor(NativeContext(workingDirectory),
                                                                                        bridgeLines)
 
 

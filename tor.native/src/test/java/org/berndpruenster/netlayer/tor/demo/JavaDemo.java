@@ -2,10 +2,7 @@ package org.berndpruenster.netlayer.tor.demo;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
-import org.berndpruenster.netlayer.tor.HiddenServiceSocket;
-import org.berndpruenster.netlayer.tor.NativeTor;
-import org.berndpruenster.netlayer.tor.Tor;
-import org.berndpruenster.netlayer.tor.TorSocket;
+import org.berndpruenster.netlayer.tor.*;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -24,7 +21,7 @@ public class JavaDemo {
     @Parameter(names = {"-p"}, description = "hidden Service Port")
     private int port;
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, TorCtlException {
         JavaDemo demo = new JavaDemo();
         demo.port = 10024;
         new JCommander(demo).parse();

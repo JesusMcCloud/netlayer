@@ -128,7 +128,8 @@ private class Control(private val con: TorController) {
 
 internal data class HsContainer(internal val hostname: String, internal val handler: TorEventHandler)
 
-abstract class Tor protected constructor(protected val context: TorContext, bridgeLines: Collection<String>? = null) {
+
+abstract class Tor @Throws(TorCtlException::class) protected constructor(protected val context: TorContext, bridgeLines: Collection<String>? = null) {
 
 
     private val eventHandler: TorEventHandler = TorEventHandler()
