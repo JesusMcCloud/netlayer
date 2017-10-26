@@ -250,6 +250,7 @@ abstract class TorContext protected constructor(val workingDirectory: File) {
         val cookieObserver = generateWriteObserver(cookieFile)
         // Start a new Tor process
         val torPath = torExecutableFile.absolutePath
+        torExecutableFile.setExecutable(true, true)
         val configPath = torrcFile.absolutePath
         val pid = processId
         val cmd = listOf<String>(torPath, "-f", configPath, OWNER, pid)
@@ -327,6 +328,7 @@ abstract class TorContext protected constructor(val workingDirectory: File) {
             InterruptedException::class) protected fun installAndConfigureFiles(bridgeConfig: List<String>) {
 
         installFiles()
+
         PrintWriter(FileWriter(torrcFile, true).buffered()).use { confWriter ->
             confWriter.println()
             confWriter.println(DIRECTIVE_COOKIE_AUTH_FILE + cookieFile.absolutePath)

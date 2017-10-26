@@ -16,7 +16,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Maven plugins -->
     <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
-    <netlayer.version>0.2</netlayer.version>
+    <netlayer.version>0.3</netlayer.version>
+    <tor-binary.version>7.0.6</tor-binary.version>
   </properties>
 
     <modules>
@@ -28,6 +29,10 @@
     <repository>
       <id>jitpack.io</id>
       <url>https://jitpack.io</url>
+    </repository>
+    <repository>
+      <id>tor-binary</id>
+      <url>https://raw.githubusercontent.com/JesusMcCloud/tor-binary/testrelease/release/</url>
     </repository>
   </repositories>
   <dependencies>

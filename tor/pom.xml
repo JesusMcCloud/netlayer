@@ -16,6 +16,13 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.cedricwalter</groupId>
+            <artifactId>tor-binary-geoip</artifactId>
+            <version>${tor-binary.version}</version>
+            <type>zip</type>
+            <classifier>zip</classifier>
+        </dependency>
+        <dependency>
             <groupId>com.github.JesusMcCloud</groupId>
             <artifactId>jtorctl</artifactId>
             <version>0</version>
@@ -34,6 +41,33 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.cedricwalter</groupId>
+                                    <artifactId>tor-binary-geoip</artifactId>
+                                    <version>${tor-binary.version}</version>
+                                    <type>zip</type>
+                                    <classifier>zip</classifier>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}/classes</outputDirectory>
+                                    <includes>geoip,geoip6</includes>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <artifactId>kotlin-maven-plugin</artifactId>
                 <groupId>org.jetbrains.kotlin</groupId>
