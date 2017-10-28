@@ -48,9 +48,9 @@
             <version>567e1cd</version>
         </dependency>
         <dependency>
-            <groupId>io.github.microutils</groupId>
+            <groupId>com.github.MicroUtils</groupId>
             <artifactId>kotlin-logging</artifactId>
-            <version>1.4.6</version>
+            <version>3aedaa9310</version>
         </dependency>
     </dependencies>
 </project>
