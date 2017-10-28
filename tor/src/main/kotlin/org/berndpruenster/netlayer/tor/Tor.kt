@@ -129,7 +129,8 @@ private class Control(private val con: TorController) {
 internal data class HsContainer(internal val hostname: String, internal val handler: TorEventHandler)
 
 
-abstract class Tor @Throws(TorCtlException::class) protected constructor(protected val context: TorContext, bridgeLines: Collection<String>? = null) {
+abstract class Tor @Throws(TorCtlException::class) protected constructor(protected val context: TorContext,
+                                                                         bridgeLines: Collection<String>? = null) {
 
 
     private val eventHandler: TorEventHandler = TorEventHandler()
@@ -140,9 +141,12 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor(protect
             return field
         }
 
-
     init {
-        control = bootstrap()
+        control = try {
+            bootstrap()
+        } catch (e: Exception) {
+            throw TorCtlException(cause = e)
+        }
         Runtime.getRuntime().addShutdownHook(Thread({ control.shutdown() }))
     }
 
