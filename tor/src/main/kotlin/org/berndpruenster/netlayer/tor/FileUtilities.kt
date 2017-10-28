@@ -128,6 +128,9 @@ fun extractContentFromArchive(destinationDirectory: File, archiveInputStream: In
                     if ((mode and 64) > 0) {
                         f.setExecutable(true, (mode and 1) == 0)
                     }
+                    if(OsType.current==OsType.MACOS){
+                        f.setExecutable(true,true)
+                    }
                 }
             }
             entry = tarIn.nextTarEntry

@@ -250,7 +250,6 @@ abstract class TorContext protected constructor(val workingDirectory: File) {
         val cookieObserver = generateWriteObserver(cookieFile)
         // Start a new Tor process
         val torPath = torExecutableFile.absolutePath
-        torExecutableFile.setExecutable(true, true)
         val configPath = torrcFile.absolutePath
         val pid = processId
         val cmd = listOf<String>(torPath, "-f", configPath, OWNER, pid)

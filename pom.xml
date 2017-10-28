@@ -5,7 +5,7 @@
 
     <groupId>org.berndpruenster.netlayer</groupId>
     <artifactId>parent</artifactId>
-    <version>0.3.1</version>
+    <version>0.3.2</version>
     <packaging>pom</packaging>
 
     <name>Netlayer</name>
@@ -18,7 +18,7 @@
         <!-- Maven plugins -->
         <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
         <netlayer.version>0.3</netlayer.version>
-        <tor-binary.version>7.0.6</tor-binary.version>
+        <tor-binary.version>7.0.7</tor-binary.version>
     </properties>
 
     <modules>
@@ -48,9 +48,9 @@
             <version>567e1cd</version>
         </dependency>
         <dependency>
-            <groupId>com.github.MicroUtils</groupId>
+            <groupId>io.github.microutils</groupId>
             <artifactId>kotlin-logging</artifactId>
-            <version>-SNAPSHOT</version>
+            <version>1.4.6</version>
         </dependency>
     </dependencies>
 </project>
