@@ -4,5 +4,6 @@ DisableNetwork 1
 AvoidDiskWrites 1
 PidFile pid
 RunAsDaemon 1
-SafeSocks 1
+SafeSocks 0
+HiddenServiceStatistics 0
 SOCKSPort auto
