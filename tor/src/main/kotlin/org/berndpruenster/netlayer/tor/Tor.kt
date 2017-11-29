@@ -90,6 +90,10 @@ private class Control(private val con: TorController) {
     internal var running = true
         private set
 
+    init {
+        Runtime.getRuntime().addShutdownHook(Thread({ shutdown() }))
+    }
+
 
     internal fun shutdown() {
         synchronized(running) {
@@ -135,20 +139,15 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor(protect
 
     private val eventHandler: TorEventHandler = TorEventHandler()
     private val bridgeConfig: List<String> = bridgeLines?.filter { it.length > 10 } ?: emptyList()
-    private val control: Control
+    private val control: Control = try {
+        bootstrap()
+    } catch (e: Exception) {
+        throw TorCtlException(cause = e)
+    }
         get() {
             if (!field.running) throw TorCtlException("Tor has already been shutdown!")
             return field
         }
-
-    init {
-        control = try {
-            bootstrap()
-        } catch (e: Exception) {
-            throw TorCtlException(cause = e)
-        }
-        Runtime.getRuntime().addShutdownHook(Thread({ control.shutdown() }))
-    }
 
 
     companion object {

@@ -23,7 +23,7 @@ As of you, simply add `tor.native` as dependency to your project (using JitPack)
       <dependency>
           <groupId>com.github.JesusMcCloud.netlayer</groupId>
           <artifactId>tor.native</artifactId>
-          <version>0.3.2.1</version>
+          <version>0.3.3</version>
       </dependency>
 ```
 
