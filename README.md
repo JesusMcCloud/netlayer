@@ -71,8 +71,5 @@ Hidden services can be hosted by creating a torified `ServerSocket`.
     hiddenServiceSocket.addReadyListener(socket -> { /*your code here*/ return null});
 ```
 
-## IDE Support
-To use this inside your IDE, be sure that the `generate-resources` lifecycle is invoked before running any code relying on the Tor wrapper (IntelliJ users simply right-click on the `generate-resources` maven lifecycle phase and check both *Execute after Build* and *Execute after Rebuild*).
-
 ## Verifying the Authenticity/Integrity of the Tor Distribution
 This library ships the official Tor binaries. To verify their authenticity, simply rebuild [the prepackaged Tor binaries](https://github.com/JesusMcCloud/tor-binary) (courtesy of [cedric walter](https://github.com/cedricwalter)) and rebuild the `tor.native`
