@@ -5,7 +5,7 @@
 
     <groupId>org.berndpruenster.netlayer</groupId>
     <artifactId>parent</artifactId>
-    <version>0.3.4</version>
+    <version>0.4</version>
     <packaging>pom</packaging>
 
     <name>Netlayer</name>
@@ -24,6 +24,7 @@
     <modules>
         <module>tor</module>
         <module>tor.native</module>
+        <module>tor.external</module>
     </modules>
 
     <repositories>

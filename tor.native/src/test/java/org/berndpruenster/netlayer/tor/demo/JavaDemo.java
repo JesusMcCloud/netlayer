@@ -43,7 +43,7 @@ public class JavaDemo {
             System.out.println("Hidden Service " + socket + " is ready");
             new Thread(() -> {
                 System.err.println("we'll try and connect to the just-published hidden service");
-                new TorSocket(socket.getServiceName(), socket.getHiddenServicePort(), "Foo");
+                new TorSocket(socket.getSocketAddress(), "Foo");
                 System.err.println("Connected to $socket. closing socket...");
                 socket.close();
                 //retry connecting

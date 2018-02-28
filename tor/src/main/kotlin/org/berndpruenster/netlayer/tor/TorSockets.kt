@@ -27,14 +27,21 @@ import java.util.*
 
 private const val RETRY_SLEEP: Long = 500
 
-data class HiddenServiceSocketAddress(val serviceName: String, val hiddenServicePort: Int) : SocketAddress()
+data class HiddenServiceSocketAddress(val serviceName: String, val hiddenServicePort: Int) : SocketAddress() {
+    override fun toString(): String = "HiddenServiceSocket[addr=$serviceName,port=$hiddenServicePort]"
+}
 
-class TorSocket @JvmOverloads constructor(val desination: String,
+class TorSocket @JvmOverloads constructor(private val destination: String,
                                           port: Int,
                                           streamId: String? = null,
                                           numTries: Int = 5,
                                           tor: Tor? = null) : Socket() {
-    private val socket = setup(desination, port, numTries, streamId, tor)
+    @JvmOverloads
+    constructor(socketAddress: HiddenServiceSocketAddress, streamId: String? = null,
+                numTries: Int = 5,
+                tor: Tor? = null) : this(socketAddress.serviceName, socketAddress.hiddenServicePort, streamId, numTries, tor)
+
+    private val socket = setup(destination, port, numTries, streamId, tor)
     @Throws(IOException::class) override fun connect(addr: SocketAddress) = throw IOException("DONT!")
 
     @Throws(IOException::class) override fun connect(addr: SocketAddress, port: Int) = throw IOException("DONT!")
@@ -47,10 +54,10 @@ class TorSocket @JvmOverloads constructor(val desination: String,
     override fun getLocalAddress(): InetAddress = socket.localAddress
     override fun getPort(): Int = socket.port
     override fun getLocalPort(): Int = socket.localPort
-    override fun getRemoteSocketAddress(): SocketAddress = HiddenServiceSocketAddress(desination, port)
+    override fun getRemoteSocketAddress(): SocketAddress = HiddenServiceSocketAddress(destination, port)
     override fun getLocalSocketAddress(): SocketAddress = socket.localSocketAddress
     override fun getChannel(): SocketChannel = socket.channel
-    override fun toString(): String = "TorSocket[addr=$desination,port=$port, localPort=$localPort]"
+    override fun toString(): String = "TorSocket[addr=$destination,port=$port, localPort=$localPort]"
     override fun isConnected(): Boolean = socket.isConnected
     override fun isBound(): Boolean = socket.isBound
     override fun isClosed(): Boolean = socket.isClosed
@@ -133,13 +140,13 @@ class HiddenServiceSocket @JvmOverloads constructor(internalPort: Int,
 
     private val mgr = getTorInstance(tor)
     private val listeners = mutableListOf<(socket: HiddenServiceSocket) -> Unit>()
-    val serviceName: String
-    val socketAddress: SocketAddress
 
+    val socketAddress: HiddenServiceSocketAddress
+    val serviceName: String
     init {
         val (name, handler) = mgr.publishHiddenService(hiddenServiceDir, hiddenServicePort, internalPort)
-        serviceName = name
-        socketAddress = HiddenServiceSocketAddress(serviceName, hiddenServicePort)
+        serviceName= name
+        socketAddress = HiddenServiceSocketAddress(name, hiddenServicePort)
         bind(InetSocketAddress(LOCAL_IP, internalPort))
         handler.attachReadyListeners(this, listeners)
     }
@@ -150,9 +157,7 @@ class HiddenServiceSocket @JvmOverloads constructor(internalPort: Int,
         }
     }
 
-    override fun toString(): String {
-        return "HiddenServiceSocket[addr=$serviceName,port=$hiddenServicePort]"
-    }
+    override fun toString(): String = socketAddress.toString()
 
 
     override fun close() {
