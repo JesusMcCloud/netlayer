@@ -74,13 +74,13 @@ private class Control(private val con: TorController) {
 
     companion object {
         @JvmStatic private val EVENTS_HS = listOf("EXTENDED",
-                                                  "CIRC",
-                                                  "ORCONN",
-                                                  "INFO",
-                                                  "NOTICE",
-                                                  "WARN",
-                                                  "ERR",
-                                                  "HS_DESC")
+                "CIRC",
+                "ORCONN",
+                "INFO",
+                "NOTICE",
+                "WARN",
+                "ERR",
+                "HS_DESC")
 
         private const val HS_OPTS = "HiddenServiceOptions"
     }
@@ -158,6 +158,43 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor(protect
         internal fun clear() {
             default = null
         }
+
+
+        @Throws(TorCtlException::class)
+        @JvmStatic
+        @JvmOverloads
+        fun getProxy(proxyPort: Int, streamID: String? = null): Socks5Proxy {
+            val proxy: Socks5Proxy
+            try {
+                proxy = Socks5Proxy(LOCAL_IP, proxyPort)
+            } catch (e: IOException) {
+                throw TorCtlException(cause = e)
+            }
+            proxy.resolveAddrLocally(false)
+            streamID?.let {
+                val hash: ByteArray
+                val authValue = BigInteger(MessageDigest.getInstance("SHA-256").digest(streamID.toByteArray())).toString(26)
+                hash = authValue.toByteArray()
+
+                proxy.setAuthenticationMethod(2, { _, proxySocket ->
+                    logger.debug("using Stream $authValue")
+
+                    val out = proxySocket.getOutputStream()
+                    out.write(byteArrayOf(1.toByte(), hash.size.toByte()))
+                    out.write(hash)
+                    out.write(byteArrayOf(1.toByte(), 0.toByte()))
+                    out.flush()
+                    val status = ByteArray(2)
+                    proxySocket.getInputStream().read(status)
+                    if (status[1] != 0.toByte()) {
+                        throw IOException("auth error: " + status[1])
+                    }
+                    arrayOf(proxySocket.getInputStream(), out)
+                })
+            }
+            return proxy
+
+        }
     }
 
 
@@ -208,38 +245,7 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor(protect
 
     @Throws(TorCtlException::class)
     @JvmOverloads
-    fun getProxy(streamID: String? = null): Socks5Proxy {
-        val proxy: Socks5Proxy
-        try {
-            proxy = Socks5Proxy(LOCAL_IP, control.proxyPort)
-        } catch (e: IOException) {
-            throw TorCtlException(cause = e)
-        }
-        proxy.resolveAddrLocally(false)
-        streamID?.let {
-            val hash: ByteArray
-            val authValue = BigInteger(MessageDigest.getInstance("SHA-256").digest(streamID.toByteArray())).toString(26)
-            hash = authValue.toByteArray()
-
-            proxy.setAuthenticationMethod(2, { _, proxySocket ->
-                logger.debug("using Stream $authValue")
-
-                val out = proxySocket.getOutputStream()
-                out.write(byteArrayOf(1.toByte(), hash.size.toByte()))
-                out.write(hash)
-                out.write(byteArrayOf(1.toByte(), 0.toByte()))
-                out.flush()
-                val status = ByteArray(2)
-                proxySocket.getInputStream().read(status)
-                if (status[1] != 0.toByte()) {
-                    throw IOException("auth error: " + status[1])
-                }
-                arrayOf(proxySocket.getInputStream(), out)
-            })
-        }
-        return proxy
-
-    }
+    fun getProxy(streamID: String? = null): Socks5Proxy = Tor.getProxy(control.proxyPort, streamID)
 
 
     /**
@@ -289,8 +295,8 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor(protect
             try {
                 if (OsType.current.isUnixoid()) {
                     val perms = mutableSetOf(PosixFilePermission.OWNER_READ,
-                                             PosixFilePermission.OWNER_WRITE,
-                                             PosixFilePermission.OWNER_EXECUTE)
+                            PosixFilePermission.OWNER_WRITE,
+                            PosixFilePermission.OWNER_EXECUTE)
                     Files.setPosixFilePermissions(hiddenServiceDirectory.toPath(), perms)
                 }
             } catch (e: Exception) {
@@ -302,7 +308,7 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor(protect
             val hostNameFileObserver = context.generateWriteObserver(hostnameFile)
             // Use the control connection to update the Tor config
             config.addAll(listOf("${HS_DIR} ${hostnameFile.parentFile.canonicalPath}",
-                                 "${HS_PORT} $hiddenServicePort ${LOCAL_IP}:$localPort"))
+                    "${HS_PORT} $hiddenServicePort ${LOCAL_IP}:$localPort"))
             control.saveConfig(config)
             // Wait for the hostname file to be created/updated
             if (!hostNameFileObserver.poll(HOSTNAME_TIMEOUT.toLong(), MILLISECONDS)) {

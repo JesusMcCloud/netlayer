@@ -52,8 +52,8 @@ class TorEventHandler : EventHandler {
 
     fun attachReadyListeners(hs: HiddenServiceSocket, listeners: List<(socket: HiddenServiceSocket) -> Unit>) {
         synchronized(socketMap) {
-            socketMap.put(hs.serviceName, hs)
-            listenerMap.put(hs.serviceName, listeners)
+            socketMap.put(hs.socketAddress.serviceName, hs)
+            listenerMap.put(hs.socketAddress.serviceName, listeners)
         }
     }
 
