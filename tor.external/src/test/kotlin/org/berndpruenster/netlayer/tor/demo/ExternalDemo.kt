@@ -6,7 +6,7 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 fun main(args:Array<String>){
-    //34465.
+
     val sock = ExternalTorSocket(34465,"google.com",443)
     val hsName = "x4hqvjg6pogtujst.onion"
     val server = ExternalHiddenServiceSocket(10024)

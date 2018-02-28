@@ -67,22 +67,22 @@ internal fun File.log() {
 }
 
 /**
- * Reads the input stream, deletes fileToWriteTo if it exists and over writes
+ * Reads the input stream, deletes dst if it exists and over writes
  * it with the stream.
  *
- * @param readFrom
+ * @param src
  *          Stream to read from
- * @param fileToWriteTo
+ * @param dst
  *          File to write to
  * @throws java.io.IOException
  *           - If any of the file operations fail
  */
-internal fun cleanInstallOneFile(readFrom: InputStream, fileToWriteTo: File) {
-    if (fileToWriteTo.exists() && !fileToWriteTo.delete()) {
-        throw  RuntimeException("Could not remove existing file ${fileToWriteTo.name}")
+internal fun cleanInstallFile(src: InputStream, dst: File) {
+    if (dst.exists() && !dst.delete()) {
+        throw  RuntimeException("Could not remove existing file ${dst.name}")
     }
-    fileToWriteTo.outputStream().buffered().use { out ->
-        readFrom.copyTo(out)
+    dst.outputStream().buffered().use { out ->
+        src.copyTo(out)
     }
 }
 

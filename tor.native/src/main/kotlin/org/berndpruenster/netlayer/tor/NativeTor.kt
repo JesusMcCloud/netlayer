@@ -52,11 +52,12 @@ private const val PATH_NATIVE = "native/"
 
 private const val OS_UNSUPPORTED = "We don't support Tor on this OS"
 
-class NativeTor @Throws(TorCtlException::class) constructor(workingDirectory: File, bridgeLines: Collection<String>? = null) : Tor(NativeContext(workingDirectory),
-                                                                                       bridgeLines)
+class NativeTor @JvmOverloads @Throws(TorCtlException::class) constructor(workingDirectory: File, bridgeLines: Collection<String>? = null, torrcOverrides: Torrc? = null)
+    : Tor(NativeContext(workingDirectory, torrcOverrides),
+        bridgeLines)
 
 
-class NativeContext(workingDirectory: File) : TorContext(workingDirectory) {
+class NativeContext(workingDirectory: File, overrides: Torrc?) : TorContext(workingDirectory, overrides) {
 
     override val processId: String
         get() {
@@ -66,20 +67,20 @@ class NativeContext(workingDirectory: File) : TorContext(workingDirectory) {
 
     override val pathToTorExecutable: String by lazy {
         when (OsType.current) {
-            OsType.WIN   -> PATH_NATIVE + PATH_WIN32
+            OsType.WIN -> PATH_NATIVE + PATH_WIN32
             OsType.MACOS -> PATH_NATIVE + PATH_MACOS64
             OsType.LNX32 -> PATH_NATIVE + PATH_LNX32
             OsType.LNX64 -> PATH_NATIVE + PATH_LNX64
-            else         -> throw  RuntimeException(OS_UNSUPPORTED)
+            else -> throw  RuntimeException(OS_UNSUPPORTED)
         }
     }
 
     private val rcPath: String by lazy {
         when (OsType.current) {
-            OsType.WIN                 -> PATH_NATIVE + PATH_WIN
-            OsType.MACOS               -> PATH_NATIVE + PATH_MACOS
+            OsType.WIN -> PATH_NATIVE + PATH_WIN
+            OsType.MACOS -> PATH_NATIVE + PATH_MACOS
             OsType.LNX32, OsType.LNX64 -> PATH_NATIVE + PATH_LNX
-            else                       -> throw  RuntimeException(OS_UNSUPPORTED)
+            else -> throw  RuntimeException(OS_UNSUPPORTED)
         }
     }
     override val pathToRC: String = "$rcPath$FILE_TORRC_NATIVE"
@@ -87,13 +88,13 @@ class NativeContext(workingDirectory: File) : TorContext(workingDirectory) {
     override val torExecutableFileName: String by lazy {
         when (OsType.current) {
             OsType.LNX32, OsType.LNX64 -> BINARY_TOR_LNX
-            OsType.WIN                 -> BINARY_TOR_WIN
-            OsType.MACOS               -> BINARY_TOR_MACOS
-            else                       -> throw  RuntimeException(OS_UNSUPPORTED)
+            OsType.WIN -> BINARY_TOR_WIN
+            OsType.MACOS -> BINARY_TOR_MACOS
+            else -> throw  RuntimeException(OS_UNSUPPORTED)
         }
     }
 
-    override fun getAssetOrResourceByName(fileName: String) = this::class.java.getResourceAsStream("/$fileName") ?: throw IOException(
+    override fun getByName(fileName: String) = this::class.java.getResourceAsStream("/$fileName") ?: throw IOException(
             "Could not load $fileName")
 
     override fun generateWriteObserver(file: File): WriteObserver = NativeWatchObserver(file)
@@ -102,9 +103,9 @@ class NativeContext(workingDirectory: File) : TorContext(workingDirectory) {
         super.installFiles()
         when (OsType.current) {
             OsType.WIN, OsType.LNX32, OsType.LNX64, OsType.MACOS -> extractContentFromArchive(workingDirectory,
-                                                                                              getAssetOrResourceByName(
-                                                                                                      pathToTorExecutable + FILE_ARCHIVE))
-            else                                                 -> throw RuntimeException(OS_UNSUPPORTED)
+                    getByName(
+                            pathToTorExecutable + FILE_ARCHIVE))
+            else -> throw RuntimeException(OS_UNSUPPORTED)
         }
     }
 }

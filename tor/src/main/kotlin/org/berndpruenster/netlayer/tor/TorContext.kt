@@ -49,6 +49,7 @@ private const val DIR_HS_ROOT = "hiddenservice"
 private const val FILE_GEOIP = "geoip"
 private const val FILE_GEOIP_6 = "geoip6"
 private const val FILE_TORRC = "torrc"
+private const val FILE_TORRC_DEFAULTS = "torrc.defaults"
 private const val FILE_HOSTNAME = "hostname"
 private const val DIRECTIVE_GEOIP6_FILE = "GeoIPv6File "
 private const val DIRECTIVE_GEOIP_FILE = "GeoIPFile "
@@ -80,35 +81,88 @@ class TorController(private val socket: Socket) : TorControlConnection(socket) {
 
 }
 
-abstract class TorContext protected constructor(val workingDirectory: File) {
+class Torrc @Throws(IOException::class) internal constructor(defaults: InputStream?, overrides: Map<String, String>?) {
+
+    @Throws(IOException::class)
+    internal constructor(defaults: InputStream, str: InputStream?) : this(defaults, parse(str))
+
+    @Throws(IOException::class)
+    internal constructor(defaults: InputStream, overrides: Torrc?) : this(defaults, overrides?.rc)
+
+    @Throws(IOException::class)
+    constructor(src: InputStream) : this(src, str = null)
+
+    @Throws(IOException::class)
+    constructor(rc: LinkedHashMap<String, String>) : this(null, rc)
+
+    private val rc = LinkedHashMap<String, String>()
+
+    init {
+        overrides?.forEach { rc.put(it.key, it.value.trim()) }
+        parse(defaults)?.forEach { rc.put(it.key, it.value.trim()) }
+    }
+
+    val inputStream: InputStream
+        get() {
+            val outputStream = ByteArrayOutputStream()
+            outputStream.bufferedWriter().use { str ->
+                rc.forEach {
+                    str.write("${it.key} ${it.value}")
+                    str.newLine()
+                }
+            }
+            outputStream.bufferedWriter().use { it.newLine() }
+            return ByteArrayInputStream(outputStream.toByteArray())
+        }
+
+    companion object {
+        @Throws(IOException::class)
+        private fun parse(src: InputStream?): LinkedHashMap<String, String>? {
+            if (src == null)
+                return null
+            val map = LinkedHashMap<String, String>()
+            BufferedReader(src.reader()).useLines {
+                it.map { it.trim() }.filter { it.length > 5 && (!it.startsWith("#")) && it.contains(' ') }.forEach {
+                    val delim = it.indexOf(' ')
+                    val k = it.substring(0, delim)
+                    val v = it.substring(delim, it.length).trim()
+                    map.put(k, v)
+                }
+            }
+            return map
+        }
+    }
+}
+
+abstract class TorContext @Throws(IOException::class) protected constructor(val workingDirectory: File, private val overrides: Torrc?) {
     companion object {
         @JvmStatic protected val FILE_TORRC_NATIVE = "torrc.native"
         @JvmStatic private val EVENTS = listOf("CIRC", "WARN", "ERR")
 
         private fun parseBootstrap(inputStream: InputStream, latch: CountDownLatch, port: AtomicReference<Int>) {
             Thread({
-                       Thread.currentThread().name = "NFO"
-                       BufferedReader(inputStream.reader()).use { reader ->
-                           reader.forEachLine {
-                               logger.debug { it }
-                               if (it.contains("Control listener listening on port ")) {
-                                   port.set(Integer.parseInt(it.substring(it.lastIndexOf(" ") + 1, it.length - 1)))
-                                   latch.countDown()
-                               }
-                           }
-                       }
-                   }).start()
+                Thread.currentThread().name = "NFO"
+                BufferedReader(inputStream.reader()).use { reader ->
+                    reader.forEachLine {
+                        logger.debug { it }
+                        if (it.contains("Control listener listening on port ")) {
+                            port.set(Integer.parseInt(it.substring(it.lastIndexOf(" ") + 1, it.length - 1)))
+                            latch.countDown()
+                        }
+                    }
+                }
+            }).start()
         }
 
         private fun forwardErr(inputStream: InputStream) {
             Thread({
-                       Thread.currentThread().name = "ERR"
-                       BufferedReader(inputStream.reader()).use { reader ->
-                           reader.forEachLine {
-                               logger.error { it }
-                           }
-                       }
-                   }).start()
+                Thread.currentThread().name = "ERR"
+                BufferedReader(inputStream.reader()).use { reader ->
+                    reader.forEachLine {
+                        logger.error { it }
+                    }
+                }
+            }).start()
         }
     }
 
@@ -147,14 +201,20 @@ abstract class TorContext protected constructor(val workingDirectory: File) {
             throw RuntimeException("Could not create root directory $workingDirectory!")
         }
 
-        getAssetOrResourceByName(FILE_GEOIP).use { str ->
-            cleanInstallOneFile(str, geoIpFile)
+        getByName(FILE_GEOIP).use { str ->
+            cleanInstallFile(str, geoIpFile)
         }
-        getAssetOrResourceByName(FILE_GEOIP_6).use { str ->
-            cleanInstallOneFile(str, geoIpv6File)
+        getByName(FILE_GEOIP_6).use { str ->
+            cleanInstallFile(str, geoIpv6File)
         }
-        getAssetOrResourceByName(FILE_TORRC).use { str ->
-            cleanInstallOneFile(str, torrcFile)
+        getByName(FILE_TORRC).use { str ->
+            Torrc(str, overrides).inputStream.use { rc ->
+                getByName(FILE_TORRC_DEFAULTS).use {
+                    Torrc(it, rc).inputStream.use {
+                        cleanInstallFile(it, torrcFile)
+                    }
+                }
+            }
         }
     }
 
@@ -177,7 +237,7 @@ abstract class TorContext protected constructor(val workingDirectory: File) {
                 // environment variable we fix that.
                 environment.put("LD_LIBRARY_PATH", workingDirectory.absolutePath)
         //$FALL-THROUGH$
-            else                       -> {
+            else -> {
             }
         }
     }
@@ -211,7 +271,7 @@ abstract class TorContext protected constructor(val workingDirectory: File) {
 
     abstract fun generateWriteObserver(file: File): WriteObserver
 
-    abstract fun getAssetOrResourceByName(fileName: String): InputStream
+    abstract fun getByName(fileName: String): InputStream
 
     internal fun getHiddenServiceDirectory(hsDir: String): File {
         return File(workingDirectory, "/${DIR_HS_ROOT}/$hsDir")
@@ -338,7 +398,7 @@ abstract class TorContext protected constructor(val workingDirectory: File) {
             confWriter.println(DIRECTIVE_GEOIP_FILE + geoIpFile.name)
             confWriter.println(DIRECTIVE_GEOIP6_FILE + geoIpv6File.name)
 
-            getAssetOrResourceByName(pathToRC).reader().buffered().use { reader ->
+            getByName(pathToRC).reader().buffered().use { reader ->
                 confWriter.println()
                 reader.forEachLine {
                     confWriter.println(it)
