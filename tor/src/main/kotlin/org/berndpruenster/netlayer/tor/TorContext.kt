@@ -83,17 +83,15 @@ class TorController(private val socket: Socket) : TorControlConnection(socket) {
 
 class Torrc @Throws(IOException::class) internal constructor(defaults: InputStream?, overrides: Map<String, String>?) {
 
-    @Throws(IOException::class)
-    internal constructor(defaults: InputStream, str: InputStream?) : this(defaults, parse(str))
+    @Throws(IOException::class) internal constructor(defaults: InputStream, str: InputStream?) : this(defaults,
+                                                                                                      parse(str))
 
-    @Throws(IOException::class)
-    internal constructor(defaults: InputStream, overrides: Torrc?) : this(defaults, overrides?.rc)
+    @Throws(IOException::class) internal constructor(defaults: InputStream, overrides: Torrc?) : this(defaults,
+                                                                                                      overrides?.rc)
 
-    @Throws(IOException::class)
-    constructor(src: InputStream) : this(src, str = null)
+    @Throws(IOException::class) constructor(src: InputStream) : this(src, str = null)
 
-    @Throws(IOException::class)
-    constructor(rc: LinkedHashMap<String, String>) : this(null, rc)
+    @Throws(IOException::class) constructor(rc: LinkedHashMap<String, String>) : this(null, rc)
 
     private val rc = LinkedHashMap<String, String>()
 
@@ -102,7 +100,7 @@ class Torrc @Throws(IOException::class) internal constructor(defaults: InputStre
         parse(defaults)?.forEach { rc.put(it.key, it.value.trim()) }
     }
 
-    val inputStream: InputStream
+    internal val inputStream: InputStream
         get() {
             val outputStream = ByteArrayOutputStream()
             outputStream.bufferedWriter().use { str ->
@@ -118,8 +116,7 @@ class Torrc @Throws(IOException::class) internal constructor(defaults: InputStre
     companion object {
         @Throws(IOException::class)
         private fun parse(src: InputStream?): LinkedHashMap<String, String>? {
-            if (src == null)
-                return null
+            if (src == null) return null
             val map = LinkedHashMap<String, String>()
             BufferedReader(src.reader()).useLines {
                 it.map { it.trim() }.filter { it.length > 5 && (!it.startsWith("#")) && it.contains(' ') }.forEach {
@@ -132,37 +129,43 @@ class Torrc @Throws(IOException::class) internal constructor(defaults: InputStre
             return map
         }
     }
+
+    override fun toString(): String = StringBuilder().apply { rc.forEach { this.append(it.key).append(" ").append(it.value).append(" ") } }.toString()
+
 }
 
-abstract class TorContext @Throws(IOException::class) protected constructor(val workingDirectory: File, private val overrides: Torrc?) {
+abstract class TorContext @Throws(IOException::class) protected constructor(val workingDirectory: File,
+                                                                            private val overrides: Torrc?) {
     companion object {
-        @JvmStatic protected val FILE_TORRC_NATIVE = "torrc.native"
-        @JvmStatic private val EVENTS = listOf("CIRC", "WARN", "ERR")
+        @JvmStatic
+        protected val FILE_TORRC_NATIVE = "torrc.native"
+        @JvmStatic
+        private val EVENTS = listOf("CIRC", "WARN", "ERR")
 
         private fun parseBootstrap(inputStream: InputStream, latch: CountDownLatch, port: AtomicReference<Int>) {
             Thread({
-                Thread.currentThread().name = "NFO"
-                BufferedReader(inputStream.reader()).use { reader ->
-                    reader.forEachLine {
-                        logger.debug { it }
-                        if (it.contains("Control listener listening on port ")) {
-                            port.set(Integer.parseInt(it.substring(it.lastIndexOf(" ") + 1, it.length - 1)))
-                            latch.countDown()
-                        }
-                    }
-                }
-            }).start()
+                       Thread.currentThread().name = "NFO"
+                       BufferedReader(inputStream.reader()).use { reader ->
+                           reader.forEachLine {
+                               logger.debug { it }
+                               if (it.contains("Control listener listening on port ")) {
+                                   port.set(Integer.parseInt(it.substring(it.lastIndexOf(" ") + 1, it.length - 1)))
+                                   latch.countDown()
+                               }
+                           }
+                       }
+                   }).start()
         }
 
         private fun forwardErr(inputStream: InputStream) {
             Thread({
-                Thread.currentThread().name = "ERR"
-                BufferedReader(inputStream.reader()).use { reader ->
-                    reader.forEachLine {
-                        logger.error { it }
-                    }
-                }
-            }).start()
+                       Thread.currentThread().name = "ERR"
+                       BufferedReader(inputStream.reader()).use { reader ->
+                           reader.forEachLine {
+                               logger.error { it }
+                           }
+                       }
+                   }).start()
         }
     }
 
@@ -210,7 +213,7 @@ abstract class TorContext @Throws(IOException::class) protected constructor(val 
         getByName(FILE_TORRC).use { str ->
             Torrc(str, overrides).inputStream.use { rc ->
                 getByName(FILE_TORRC_DEFAULTS).use {
-                    Torrc(it, rc).inputStream.use {
+                    Torrc(rc, it).inputStream.use {
                         cleanInstallFile(it, torrcFile)
                     }
                 }
@@ -237,7 +240,7 @@ abstract class TorContext @Throws(IOException::class) protected constructor(val 
                 // environment variable we fix that.
                 environment.put("LD_LIBRARY_PATH", workingDirectory.absolutePath)
         //$FALL-THROUGH$
-            else -> {
+            else                       -> {
             }
         }
     }
@@ -290,8 +293,8 @@ abstract class TorContext @Throws(IOException::class) protected constructor(val 
      * @throws java.lang.InterruptedException
      *           - If we are, well, interrupted
      */
-    @Throws(IOException::class) internal fun installAndStartTorOp(bridgeConfig: List<String>,
-                                                                  eventHandler: TorEventHandler): TorController {
+    @Throws(IOException::class)
+    internal fun installAndStartTorOp(bridgeConfig: List<String>, eventHandler: TorEventHandler): TorController {
 
         installAndConfigureFiles(bridgeConfig)
 
@@ -383,8 +386,8 @@ abstract class TorContext @Throws(IOException::class) protected constructor(val 
         }
     }
 
-    @Throws(IOException::class,
-            InterruptedException::class) protected fun installAndConfigureFiles(bridgeConfig: List<String>) {
+    @Throws(IOException::class, InterruptedException::class)
+    protected fun installAndConfigureFiles(bridgeConfig: List<String>) {
 
         installFiles()
 
