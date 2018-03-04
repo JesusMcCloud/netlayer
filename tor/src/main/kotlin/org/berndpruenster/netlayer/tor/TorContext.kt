@@ -46,6 +46,7 @@ import java.util.concurrent.atomic.AtomicReference
  */
 private const val FILE_AUTH_COOKIE = ".tor/control_auth_cookie"
 private const val DIR_HS_ROOT = "hiddenservice"
+private const val FILE_PID = "pid"
 private const val FILE_GEOIP = "geoip"
 private const val FILE_GEOIP_6 = "geoip6"
 private const val FILE_TORRC = "torrc"
@@ -53,6 +54,7 @@ private const val FILE_TORRC_DEFAULTS = "torrc.defaults"
 private const val FILE_HOSTNAME = "hostname"
 private const val DIRECTIVE_GEOIP6_FILE = "GeoIPv6File "
 private const val DIRECTIVE_GEOIP_FILE = "GeoIPFile "
+private const val DIRECTIVE_PIDFILE = "PidFile "
 private const val DIRECTIVE_DATA_DIRECTORY = "DataDirectory "
 private const val DIRECTIVE_COOKIE_AUTH_FILE = "CookieAuthFile "
 
@@ -175,6 +177,7 @@ abstract class TorContext @Throws(IOException::class) protected constructor(val 
     protected abstract val torExecutableFileName: String
     abstract val processId: String
 
+    internal val pidFile = File(workingDirectory, FILE_PID)
     internal val geoIpFile = File(workingDirectory, FILE_GEOIP)
     internal val geoIpv6File = File(workingDirectory, FILE_GEOIP_6)
     internal val torrcFile = File(workingDirectory, FILE_TORRC)
@@ -398,8 +401,9 @@ abstract class TorContext @Throws(IOException::class) protected constructor(val 
             // name, not a path and it has
             // to be in the data directory so we need to set both
             confWriter.println(DIRECTIVE_DATA_DIRECTORY + workingDirectory.absolutePath)
-            confWriter.println(DIRECTIVE_GEOIP_FILE + geoIpFile.name)
-            confWriter.println(DIRECTIVE_GEOIP6_FILE + geoIpv6File.name)
+            confWriter.println(DIRECTIVE_GEOIP_FILE + geoIpFile.absolutePath)
+            confWriter.println(DIRECTIVE_PIDFILE + pidFile.absolutePath)
+            confWriter.println(DIRECTIVE_GEOIP6_FILE + geoIpv6File.absolutePath)
 
             getByName(pathToRC).reader().buffered().use { reader ->
                 confWriter.println()

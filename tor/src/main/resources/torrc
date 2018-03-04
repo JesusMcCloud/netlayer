@@ -2,6 +2,5 @@ ControlPort auto
 CookieAuthentication 1
 DisableNetwork 1
 AvoidDiskWrites 1
-PidFile pid
 RunAsDaemon 1
 SOCKSPort auto

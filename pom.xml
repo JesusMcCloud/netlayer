@@ -5,7 +5,7 @@
 
     <groupId>org.berndpruenster.netlayer</groupId>
     <artifactId>parent</artifactId>
-    <version>0.4.1</version>
+    <version>0.4.2</version>
     <packaging>pom</packaging>
 
     <name>Netlayer</name>
@@ -17,8 +17,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- Maven plugins -->
         <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
-        <netlayer.version>0.3</netlayer.version>
-        <tor-binary.version>7.0.11</tor-binary.version>
+        <tor-binary.version>7.5</tor-binary.version>
     </properties>
 
     <modules>
@@ -34,13 +33,13 @@
         </repository>
         <repository>
             <id>tor-binary</id>
-            <url>https://raw.githubusercontent.com/JesusMcCloud/tor-binary/testrelease/release/</url>
+            <url>https://raw.githubusercontent.com/JesusMcCloud/tor-binary/master/release/</url>
         </repository>
     </repositories>
     <dependencies>
-        <dependency>
+         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib-jre8</artifactId>
+            <artifactId>kotlin-stdlib-jdk8</artifactId>
             <version>${kotlin.version}</version>
         </dependency>
         <dependency>
