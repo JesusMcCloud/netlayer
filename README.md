@@ -7,6 +7,9 @@ This repository currently contains a Kotlin/Java8 Tor Library supporting
  * Bridges and pluggable transports
  * Connecting to hidden services
  * Hosting of hidden services
+ 
+ This project was originally based on a [previous fork](https://github.com/ManfredKarrer/Tor_Onion_Proxy_Library
+) of [thaliproject/Tor_Onion_Proxy_Library](https://github.com/thaliproject/Tor_Onion_Proxy_Library), but deviated significatnly since.
 
 ## Usage
 This is essentially a Wrapper around the official Tor releases, pre-packaged for easiy use and convenient integration into Kotlin/Java Projects.
