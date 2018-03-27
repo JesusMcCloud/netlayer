@@ -59,22 +59,22 @@ class TorEventHandler : EventHandler {
 
     override fun circuitStatus(status: String, id: String, path: String) {
         val msg = "CircuitStatus: $id $status $path"
-        logger.debug(msg)
+        logger?.debug(msg)
     }
 
     override fun streamStatus(status: String, id: String, target: String) {
         val msg = "streamStatus: status: $status $id: , target: $target"
-        logger.debug(msg)
+        logger?.debug(msg)
 
     }
 
     override fun orConnStatus(status: String, orName: String) {
         val msg = "OR connection: status: $status, orName: $orName"
-        logger.debug(msg)
+        logger?.debug(msg)
     }
 
     override fun bandwidthUsed(read: Long, written: Long) {
-        logger.debug("bandwidthUsed: read: $read , written: $written")
+        logger?.debug("bandwidthUsed: read: $read , written: $written")
     }
 
     override fun newDescriptors(orList: List<String>) {
@@ -84,23 +84,23 @@ class TorEventHandler : EventHandler {
         orList.forEach {
             stringBuilder.append(it)
         }
-        logger.debug(stringBuilder.toString())
+        logger?.debug(stringBuilder.toString())
 
     }
 
     override fun message(severity: String, msg: String) {
         val msg2 = "message: severity: $severity , msg: $msg"
-        logger.debug(msg2)
+        logger?.debug(msg2)
     }
 
     override fun unrecognized(type: String, msg: String) {
         val msg2 = "unrecognized: current: $type , $msg: msg"
-        logger.debug(msg2)
+        logger?.debug(msg2)
         if (type == (HS_DESC) && msg.startsWith(UPLOADED)) {
             val hiddenServiceID = "${msg.split(" ")[1]}.onion"
             synchronized(socketMap) {
                 val hs = socketMap.get(hiddenServiceID) ?: return
-                logger.info("Hidden Service $hs is ready")
+                logger?.info("Hidden Service $hs is ready")
                 listenerMap.get(hiddenServiceID)?.forEach {
                     it(hs)
                 }

@@ -181,16 +181,16 @@ class HiddenServiceSocket @JvmOverloads constructor(internalPort: Int,
     val mgr = getTorInstance(tor)
     for (i in 1..numTries) {
         try {
-            logger.debug { "trying to connect to $onionUrl:$port" }
+            logger?.debug { "trying to connect to $onionUrl:$port" }
             val proxy = mgr.getProxy(streamID)
-            logger.debug { "got proxy $proxy" }
+            logger?.debug { "got proxy $proxy" }
             val ssock = SocksSocket(proxy, onionUrl, port)
 
-            logger.debug("Took ${Calendar.getInstance().timeInMillis - before}ms to connect to " + onionUrl + ":" + port)
+            logger?.debug("Took ${Calendar.getInstance().timeInMillis - before}ms to connect to " + onionUrl + ":" + port)
             ssock.tcpNoDelay = true
             return ssock
         } catch (exx: UnknownHostException) {
-            logger.debug("Try $i connecting to $onionUrl:$port failed. retrying...")
+            logger?.debug("Try $i connecting to $onionUrl:$port failed. retrying...")
             Thread.sleep(RETRY_SLEEP)
             continue
 

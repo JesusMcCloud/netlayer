@@ -71,7 +71,7 @@ class TorController(private val socket: Socket) : TorControlConnection(socket) {
 
     fun shutdown() {
         socket.use {
-            logger.debug("Stopping Tor")
+            logger?.debug("Stopping Tor")
             setConf(DISABLE_NETWORK, "1")
             shutdownTor("TERM")
         }
@@ -149,7 +149,7 @@ abstract class TorContext @Throws(IOException::class) protected constructor(val 
                        Thread.currentThread().name = "NFO"
                        BufferedReader(inputStream.reader()).use { reader ->
                            reader.forEachLine {
-                               logger.debug { it }
+                               logger?.debug { it }
                                if (it.contains("Control listener listening on port ")) {
                                    port.set(Integer.parseInt(it.substring(it.lastIndexOf(" ") + 1, it.length - 1)))
                                    latch.countDown()
@@ -164,7 +164,7 @@ abstract class TorContext @Throws(IOException::class) protected constructor(val 
                        Thread.currentThread().name = "ERR"
                        BufferedReader(inputStream.reader()).use { reader ->
                            reader.forEachLine {
-                               logger.error { it }
+                               logger?.error { it }
                            }
                        }
                    }).start()
@@ -301,7 +301,7 @@ abstract class TorContext @Throws(IOException::class) protected constructor(val 
 
         installAndConfigureFiles(bridgeConfig)
 
-        logger.info("Starting Tor")
+        logger?.info("Starting Tor")
         val cookieFile = cookieFile
         if (!cookieFile.parentFile.exists() && !cookieFile.parentFile.mkdirs()) {
             throw  RuntimeException("Could not create cookieFile parent directory")

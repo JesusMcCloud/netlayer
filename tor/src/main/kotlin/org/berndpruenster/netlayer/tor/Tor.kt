@@ -65,7 +65,7 @@ private const val NET_LISTENERS_SOCKS = "net/listeners/socks"
 
 private const val HOSTNAME_TIMEOUT = 30 * 1000                                       // Milliseconds
 
-val logger = KotlinLogging.logger { }
+val logger = try{ KotlinLogging.logger { } } catch(e: Exception) { System.err.println(e); null }
 
 
 class TorCtlException(message: String? = null, cause: Throwable? = null) : Throwable(message, cause)
@@ -177,7 +177,7 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor(protect
                 hash = authValue.toByteArray()
 
                 proxy.setAuthenticationMethod(2, { _, proxySocket ->
-                    logger.debug("using Stream $authValue")
+                    logger?.debug("using Stream $authValue")
 
                     val out = proxySocket.getOutputStream()
                     out.write(byteArrayOf(1.toByte(), hash.size.toByte()))
@@ -281,7 +281,7 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor(protect
                 config.add("${service.key} ${service.value}")
             }
 
-            logger.debug("Creating hidden service $hsDirName")
+            logger?.debug("Creating hidden service $hsDirName")
             val hostnameFile = context.getHostNameFile(hsDirName)
 
             if (!(hostnameFile.parentFile.exists() || hostnameFile.parentFile.mkdirs())) {
@@ -300,7 +300,7 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor(protect
                     Files.setPosixFilePermissions(hiddenServiceDirectory.toPath(), perms)
                 }
             } catch (e: Exception) {
-                logger.error("could not set permissions, hidden service $hsDirName will most probably not work", e)
+                logger?.error("could not set permissions, hidden service $hsDirName will most probably not work", e)
             }
 
             control.enableHiddenServiceEvents()
@@ -318,7 +318,7 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor(protect
 
             // Publish the hidden service's onion hostname in transport properties
             val hostname = hostnameFile.readBytes().toString(Charsets.UTF_8).trim()
-            logger.debug("PUBLISH: Hidden service config has completed: $config")
+            logger?.debug("PUBLISH: Hidden service config has completed: $config")
 
             return HsContainer(hostname, eventHandler)
         }
@@ -349,7 +349,7 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor(protect
 
                 conf.add("${service.key} ${service.value}")
             }
-            logger.debug("UNPUBL Hidden service config has completed: $conf")
+            logger?.debug("UNPUBL Hidden service config has completed: $conf")
             control.saveConfig(conf)
         }
     }

@@ -94,7 +94,7 @@ class NativeWatchObserver(private val fileToWatch: File) : WriteObserver {
                         val kind = event.kind()
 
                         if (kind == StandardWatchEventKinds.OVERFLOW) {
-                            logger.error("We got an overflow, there shouldn't have been enough activity to make that happen.")
+                            logger?.error("We got an overflow, there shouldn't have been enough activity to make that happen.")
                         }
 
                         val changedEntry = event.context() as Path
@@ -108,7 +108,7 @@ class NativeWatchObserver(private val fileToWatch: File) : WriteObserver {
                     // to reset in order to
                     // receive any further notifications.
                     if (!key.reset()) {
-                        logger.error("The key became invalid which should not have happened.")
+                        logger?.error("The key became invalid which should not have happened.")
                     }
                 }
 

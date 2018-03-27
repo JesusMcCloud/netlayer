@@ -62,7 +62,7 @@ internal fun File.log() {
             (it.log())
         }
     } else {
-        logger.info(absolutePath)
+        logger?.info(absolutePath)
     }
 }
 
