@@ -77,12 +77,17 @@ internal fun File.log() {
  * @throws java.io.IOException
  *           - If any of the file operations fail
  */
+@Throws(IOException::class)
 internal fun cleanInstallFile(src: InputStream, dst: File) {
-    if (dst.exists() && !dst.delete()) {
-        throw  RuntimeException("Could not remove existing file ${dst.name}")
-    }
-    dst.outputStream().buffered().use { out ->
-        src.copyTo(out)
+    try {
+        if (dst.exists() && !dst.delete()) {
+            throw  IOException("Could not remove existing file ${dst.name}")
+        }
+        dst.outputStream().buffered().use { out ->
+            src.copyTo(out)
+        }
+    } catch (e: Exception) {
+        throw IOException(e)
     }
 }
 
@@ -128,8 +133,8 @@ fun extractContentFromArchive(destinationDirectory: File, archiveInputStream: In
                     if ((mode and 64) > 0) {
                         f.setExecutable(true, (mode and 1) == 0)
                     }
-                    if(OsType.current==OsType.MACOS){
-                        f.setExecutable(true,true)
+                    if (OsType.current == OsType.MACOS) {
+                        f.setExecutable(true, true)
                     }
                 }
             }

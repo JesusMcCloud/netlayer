@@ -184,6 +184,7 @@ abstract class TorContext @Throws(IOException::class) protected constructor(val 
     internal val torExecutableFile get() = File(workingDirectory, torExecutableFileName)
     internal val cookieFile = File(workingDirectory, FILE_AUTH_COOKIE)
 
+    @Throws(IOException::class)
     open fun installFiles() {
         // This is sleazy but we have cases where an old instance of the Tor OP
         // needs an extra second to
