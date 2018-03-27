@@ -12,9 +12,11 @@ import java.util.*
 class Demo {
 
     @Parameter(names = arrayOf("-b"),
-            description = "path to a file containing bridge configuration lines as obtainable from bridges.torproject.org") internal var pathBridges: String? = null
+               description = "path to a file containing bridge configuration lines as obtainable from bridges.torproject.org")
+    internal var pathBridges: String? = null
 
-    @Parameter(names = arrayOf("-p"), description = "hidden Service Port") internal var port: Int? = null
+    @Parameter(names = arrayOf("-p"), description = "hidden Service Port")
+    internal var port: Int? = null
 }
 
 fun main(args: Array<String>) {
@@ -39,26 +41,26 @@ fun main(args: Array<String>) {
         println("Hidden Service $socket is ready")
         Thread({
 
-            System.err.println("we'll try and connect to the just-published hidden service")
-            TorSocket(socket.serviceName, socket.hiddenServicePort, streamId = "Foo")
-            System.err.println("Connected to $socket. closing socket...")
-            socket.close()
-            //retry connecting
-            try {
+                   System.err.println("we'll try and connect to the just-published hidden service")
+                   TorSocket(socket.serviceName, socket.hiddenServicePort, streamId = "Foo")
+                   System.err.println("Connected to $socket. closing socket...")
+                   socket.close()
+                   //retry connecting
+                   try {
 
-                TorSocket(socket.serviceName, socket.hiddenServicePort, streamId = "Foo")
-            } catch (e: Exception) {
-                System.err.println("As exptected, connection to $socket failed!")
-            }
-            //let's connect to some regular domains using different streams
-            TorSocket("www.google.com", 80, streamId = "FOO")
-            TorSocket("www.cnn.com", 80, streamId = "BAR")
-            TorSocket("www.google.com", 80, streamId = "BAZ")
+                       TorSocket(socket.serviceName, socket.hiddenServicePort, streamId = "Foo")
+                   } catch (e: Exception) {
+                       System.err.println("As exptected, connection to $socket failed!")
+                   }
+                   //let's connect to some regular domains using different streams
+                   TorSocket("www.google.com", 80, streamId = "FOO")
+                   TorSocket("www.cnn.com", 80, streamId = "BAR")
+                   TorSocket("www.google.com", 80, streamId = "BAZ")
 
 
-            System.exit(0)
+                   System.exit(0)
 
-        }).start()
+               }).start()
         socket.accept()
         System.err.println("$socket got a connection")
 

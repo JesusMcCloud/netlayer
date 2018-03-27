@@ -65,7 +65,11 @@ private const val NET_LISTENERS_SOCKS = "net/listeners/socks"
 
 private const val HOSTNAME_TIMEOUT = 30 * 1000                                       // Milliseconds
 
-val logger = try{ KotlinLogging.logger { } } catch(e: Exception) { System.err.println(e); null }
+val logger = try {
+    KotlinLogging.logger { }
+} catch (e: Exception) {
+    System.err.println(e); null
+}
 
 
 class TorCtlException(message: String? = null, cause: Throwable? = null) : Throwable(message, cause)
@@ -73,14 +77,8 @@ class TorCtlException(message: String? = null, cause: Throwable? = null) : Throw
 private class Control(private val con: TorController) {
 
     companion object {
-        @JvmStatic private val EVENTS_HS = listOf("EXTENDED",
-                "CIRC",
-                "ORCONN",
-                "INFO",
-                "NOTICE",
-                "WARN",
-                "ERR",
-                "HS_DESC")
+        @JvmStatic
+        private val EVENTS_HS = listOf("EXTENDED", "CIRC", "ORCONN", "INFO", "NOTICE", "WARN", "ERR", "HS_DESC")
 
         private const val HS_OPTS = "HiddenServiceOptions"
     }
@@ -173,7 +171,8 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor(protect
             proxy.resolveAddrLocally(false)
             streamID?.let {
                 val hash: ByteArray
-                val authValue = BigInteger(MessageDigest.getInstance("SHA-256").digest(streamID.toByteArray())).toString(26)
+                val authValue = BigInteger(MessageDigest.getInstance("SHA-256").digest(streamID.toByteArray())).toString(
+                        26)
                 hash = authValue.toByteArray()
 
                 proxy.setAuthenticationMethod(2, { _, proxySocket ->
@@ -198,9 +197,9 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor(protect
     }
 
 
-    @Throws(InterruptedException::class,
-            IOException::class) private fun bootstrap(secondsBeforeTimeOut: Int = TOTAL_SEC_PER_STARTUP,
-                                                      numberOfRetries: Int = TRIES_PER_STARTUP): Control {
+    @Throws(InterruptedException::class, IOException::class)
+    private fun bootstrap(secondsBeforeTimeOut: Int = TOTAL_SEC_PER_STARTUP,
+                          numberOfRetries: Int = TRIES_PER_STARTUP): Control {
         var control: TorController? = null
         try {
             for (retryCount in 1..numberOfRetries) {
@@ -233,12 +232,18 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor(protect
             }
 
             throw TorCtlException("Could not setup Tor")
+
+
         } finally {
             // Make sure we return the Tor OP in some kind of consistent state,
             // even if it's 'off'.
             if (control?.bootstrapped != true) {
-                context.deleteAllFilesButHS()
-                control?.shutdown()
+                try {
+                    context.deleteAllFilesButHS()
+                    control?.shutdown()
+                } catch (e: Exception) {
+                    logger?.error { e.localizedMessage }
+                }
             }
         }
     }
@@ -260,9 +265,8 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor(protect
      *           - File errors
      * @throws TorCtlException
      */
-    @Throws(IOException::class, TorCtlException::class) internal fun publishHiddenService(hsDirName: String,
-                                                                                          hiddenServicePort: Int,
-                                                                                          localPort: Int): HsContainer {
+    @Throws(IOException::class, TorCtlException::class)
+    internal fun publishHiddenService(hsDirName: String, hiddenServicePort: Int, localPort: Int): HsContainer {
         synchronized(control) {
 
             val currentHiddenServices = control.hiddenServices
@@ -295,8 +299,8 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor(protect
             try {
                 if (OsType.current.isUnixoid()) {
                     val perms = mutableSetOf(PosixFilePermission.OWNER_READ,
-                            PosixFilePermission.OWNER_WRITE,
-                            PosixFilePermission.OWNER_EXECUTE)
+                                             PosixFilePermission.OWNER_WRITE,
+                                             PosixFilePermission.OWNER_EXECUTE)
                     Files.setPosixFilePermissions(hiddenServiceDirectory.toPath(), perms)
                 }
             } catch (e: Exception) {
@@ -308,7 +312,7 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor(protect
             val hostNameFileObserver = context.generateWriteObserver(hostnameFile)
             // Use the control connection to update the Tor config
             config.addAll(listOf("${HS_DIR} ${hostnameFile.parentFile.canonicalPath}",
-                    "${HS_PORT} $hiddenServicePort ${LOCAL_IP}:$localPort"))
+                                 "${HS_PORT} $hiddenServicePort ${LOCAL_IP}:$localPort"))
             control.saveConfig(config)
             // Wait for the hostname file to be created/updated
             if (!hostNameFileObserver.poll(HOSTNAME_TIMEOUT.toLong(), MILLISECONDS)) {

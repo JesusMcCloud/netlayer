@@ -132,7 +132,11 @@ class Torrc @Throws(IOException::class) internal constructor(defaults: InputStre
         }
     }
 
-    override fun toString(): String = StringBuilder().apply { rc.forEach { this.append(it.key).append(" ").append(it.value).append(" ") } }.toString()
+    override fun toString(): String = StringBuilder().apply {
+        rc.forEach {
+            this.append(it.key).append(" ").append(it.value).append(" ")
+        }
+    }.toString()
 
 }
 
@@ -366,7 +370,17 @@ abstract class TorContext @Throws(IOException::class) protected constructor(val 
             // Open a control connection and authenticate using the cookie file
             ctrlCon = TorController(sock)
 
-            ctrlCon.authenticate(cookieFile.readBytes())
+            var cookie: ByteArray?
+            while (true) {
+                try {
+                    cookie = cookieFile.readBytes()
+                    break;
+                } catch (e: Exception) {
+                    Thread.sleep(50)
+                    Thread.yield()
+                }
+            }
+            ctrlCon.authenticate(cookie)
             // Tell Tor to exit when the control connection is closed
             ctrlCon.takeOwnership()
             ctrlCon.resetConf(listOf(OWNER))
