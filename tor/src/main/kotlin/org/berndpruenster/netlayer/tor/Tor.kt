@@ -67,7 +67,7 @@ private const val HOSTNAME_TIMEOUT = 30 * 1000                                  
 
 val logger = try {
     KotlinLogging.logger { }
-} catch (e: Exception) {
+} catch (e: Throwable) {
     System.err.println(e); null
 }
 

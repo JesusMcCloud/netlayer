@@ -5,7 +5,7 @@
 
     <groupId>org.berndpruenster.netlayer</groupId>
     <artifactId>parent</artifactId>
-    <version>0.4.4</version>
+    <version>0.4.5</version>
     <packaging>pom</packaging>
 
     <name>Netlayer</name>
@@ -48,9 +48,9 @@
             <version>567e1cd</version>
         </dependency>
         <dependency>
-            <groupId>com.github.MicroUtils</groupId>
+            <groupId>io.github.microutils</groupId>
             <artifactId>kotlin-logging</artifactId>
-            <version>3aedaa9310</version>
+            <version>1.5.4</version>
         </dependency>
     </dependencies>
 </project>
