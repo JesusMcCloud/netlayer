@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.berndpruenster.netlayer</groupId>
         <artifactId>parent</artifactId>
-        <version>0.4.5</version>
+        <version>0.4.6</version>
     </parent>
 
     <artifactId>tor.native</artifactId>
@@ -142,16 +142,22 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
+              <groupId>org.codehaus.mojo</groupId>
+              <artifactId>build-helper-maven-plugin</artifactId>
+              <version>3.0.0</version>
+              <executions>
+                <execution>
+                  <phase>generate-sources</phase>
+                  <goals>
+                    <goal>add-source</goal>
+                  </goals>
+                  <configuration>
+                    <sources>
+                      <source>src/main/kotlin</source>
+                    </sources>
+                  </configuration>
+                </execution>
+              </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
