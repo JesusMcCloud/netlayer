@@ -30,8 +30,8 @@ public class JavaDemo {
         //set default instance, so it can be omitted whenever creating Tor (Server)Sockets
         //This will take some time
         Tor.setDefault(new NativeTor(/*Tor installation destination*/
-                new File("tor-demo"), /*bridge configuration*/
-                parseBridgeLines(demo.pathBridges)));
+                new File("tor-demo"),
+                /*bridge configuration*/ parseBridgeLines(demo.pathBridges)));
 
         System.out.println("Tor has been bootstrapped");
 
@@ -43,21 +43,28 @@ public class JavaDemo {
             System.out.println("Hidden Service " + socket + " is ready");
             new Thread(() -> {
                 System.err.println("we'll try and connect to the just-published hidden service");
-                new TorSocket(socket.getSocketAddress(), "Foo");
-                System.err.println("Connected to $socket. closing socket...");
-                socket.close();
+                try {
+                    new TorSocket(socket.getSocketAddress(), "Foo");
+                    System.err.println("Connected to $socket. closing socket...");
+                    socket.close();
+                } catch (Exception e) {
+                    System.err.println("This should have worked");
+                }
                 //retry connecting
                 try {
 
                     new TorSocket(socket.getServiceName(), socket.getHiddenServicePort(), "Foo");
                 } catch (Exception e) {
-                    System.err.println("As exptected, connection to $socket failed!");
+                    System.err.println("As exptected, connection to " + socket + " failed!");
                 }
-                //let's connect to some regular domains using different streams
-                new TorSocket("www.google.com", 80, "FOO");
-                new TorSocket("www.cnn.com", 80, "BAR");
-                new TorSocket("www.google.com", 80, "BAZ");
-
+                try {
+                    //let's connect to some regular domains using different streams
+                    new TorSocket("www.google.com", 80, "FOO");
+                    new TorSocket("www.cnn.com", 80, "BAR");
+                    new TorSocket("www.google.com", 80, "BAZ");
+                } catch (Exception e) {
+                    System.err.println("This should have worked");
+                }
 
                 System.exit(0);
 

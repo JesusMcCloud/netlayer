@@ -31,22 +31,30 @@ data class HiddenServiceSocketAddress(val serviceName: String, val hiddenService
     override fun toString(): String = "HiddenServiceSocket[addr=$serviceName,port=$hiddenServicePort]"
 }
 
-class TorSocket @JvmOverloads constructor(private val destination: String,
-                                          port: Int,
-                                          streamId: String? = null,
-                                          numTries: Int = 5,
-                                          tor: Tor? = null) : Socket() {
-    @JvmOverloads
-    constructor(socketAddress: HiddenServiceSocketAddress, streamId: String? = null,
-                numTries: Int = 5,
-                tor: Tor? = null) : this(socketAddress.serviceName, socketAddress.hiddenServicePort, streamId, numTries, tor)
+class TorSocket @JvmOverloads @Throws(IOException::class) constructor(private val destination: String,
+                                                                      port: Int,
+                                                                      streamId: String? = null,
+                                                                      numTries: Int = 5,
+                                                                      tor: Tor? = null) : Socket() {
+    @JvmOverloads @Throws(IOException::class) constructor(socketAddress: HiddenServiceSocketAddress,
+                                                          streamId: String? = null,
+                                                          numTries: Int = 5,
+                                                          tor: Tor? = null) : this(socketAddress.serviceName,
+                                                                                   socketAddress.hiddenServicePort,
+                                                                                   streamId,
+                                                                                   numTries,
+                                                                                   tor)
 
     private val socket = setup(destination, port, numTries, streamId, tor)
-    @Throws(IOException::class) override fun connect(addr: SocketAddress) = throw IOException("DONT!")
 
-    @Throws(IOException::class) override fun connect(addr: SocketAddress, port: Int) = throw IOException("DONT!")
+    @Throws(IOException::class)
+    override fun connect(addr: SocketAddress) = throw IOException("DONT!")
 
-    @Throws(IOException::class) override fun bind(addr: SocketAddress) {
+    @Throws(IOException::class)
+    override fun connect(addr: SocketAddress, port: Int) = throw IOException("DONT!")
+
+    @Throws(IOException::class)
+    override fun bind(addr: SocketAddress) {
         socket.bind(addr)
     }
 
@@ -63,67 +71,101 @@ class TorSocket @JvmOverloads constructor(private val destination: String,
     override fun isClosed(): Boolean = socket.isClosed
     override fun isInputShutdown(): Boolean = socket.isInputShutdown
     override fun isOutputShutdown(): Boolean = socket.isOutputShutdown
-    @Throws(IOException::class) override fun getInputStream(): InputStream = socket.getInputStream()
-    @Throws(IOException::class) override fun getOutputStream(): OutputStream = socket.getOutputStream()
-    @Throws(SocketException::class) override fun getTcpNoDelay(): Boolean = socket.tcpNoDelay
-    @Throws(SocketException::class) override fun getOOBInline(): Boolean = socket.oobInline
-    @Throws(SocketException::class) override fun getSoTimeout(): Int = socket.soTimeout
-    @Throws(SocketException::class) override fun getSendBufferSize(): Int = socket.sendBufferSize
-    @Throws(SocketException::class) override fun getReceiveBufferSize(): Int = socket.receiveBufferSize
-    @Throws(SocketException::class) override fun getTrafficClass(): Int = socket.trafficClass
-    @Throws(SocketException::class) override fun getKeepAlive(): Boolean = socket.keepAlive
-    @Throws(SocketException::class) override fun getReuseAddress(): Boolean = socket.reuseAddress
-    @Throws(SocketException::class) override fun getSoLinger(): Int = socket.soLinger
+    @Throws(IOException::class)
+    override fun getInputStream(): InputStream = socket.getInputStream()
 
-    @Throws(SocketException::class) override fun setTcpNoDelay(arg0: Boolean) {
+    @Throws(IOException::class)
+    override fun getOutputStream(): OutputStream = socket.getOutputStream()
+
+    @Throws(SocketException::class)
+    override fun getTcpNoDelay(): Boolean = socket.tcpNoDelay
+
+    @Throws(SocketException::class)
+    override fun getOOBInline(): Boolean = socket.oobInline
+
+    @Throws(SocketException::class)
+    override fun getSoTimeout(): Int = socket.soTimeout
+
+    @Throws(SocketException::class)
+    override fun getSendBufferSize(): Int = socket.sendBufferSize
+
+    @Throws(SocketException::class)
+    override fun getReceiveBufferSize(): Int = socket.receiveBufferSize
+
+    @Throws(SocketException::class)
+    override fun getTrafficClass(): Int = socket.trafficClass
+
+    @Throws(SocketException::class)
+    override fun getKeepAlive(): Boolean = socket.keepAlive
+
+    @Throws(SocketException::class)
+    override fun getReuseAddress(): Boolean = socket.reuseAddress
+
+    @Throws(SocketException::class)
+    override fun getSoLinger(): Int = socket.soLinger
+
+    @Throws(SocketException::class)
+    override fun setTcpNoDelay(arg0: Boolean) {
         socket.tcpNoDelay = arg0
     }
 
-    @Throws(SocketException::class) override fun setSoLinger(arg0: Boolean, arg1: Int) {
+    @Throws(SocketException::class)
+    override fun setSoLinger(arg0: Boolean, arg1: Int) {
         socket.setSoLinger(arg0, arg1)
     }
 
-    @Throws(IOException::class) override fun sendUrgentData(arg0: Int) {
+    @Throws(IOException::class)
+    override fun sendUrgentData(arg0: Int) {
         socket.sendUrgentData(arg0)
     }
 
-    @Throws(SocketException::class) override fun setOOBInline(arg0: Boolean) {
+    @Throws(SocketException::class)
+    override fun setOOBInline(arg0: Boolean) {
         socket.oobInline = arg0
     }
 
-    @Throws(SocketException::class) override fun setSoTimeout(arg0: Int) {
+    @Throws(SocketException::class)
+    override fun setSoTimeout(arg0: Int) {
         socket.soTimeout = arg0
     }
 
-    @Throws(SocketException::class) override fun setSendBufferSize(arg0: Int) {
+    @Throws(SocketException::class)
+    override fun setSendBufferSize(arg0: Int) {
         socket.sendBufferSize = arg0
     }
 
-    @Throws(SocketException::class) override fun setReceiveBufferSize(arg0: Int) {
+    @Throws(SocketException::class)
+    override fun setReceiveBufferSize(arg0: Int) {
         socket.receiveBufferSize = arg0
     }
 
-    @Throws(SocketException::class) override fun setKeepAlive(arg0: Boolean) {
+    @Throws(SocketException::class)
+    override fun setKeepAlive(arg0: Boolean) {
         socket.keepAlive = arg0
     }
 
-    @Throws(SocketException::class) override fun setTrafficClass(arg0: Int) {
+    @Throws(SocketException::class)
+    override fun setTrafficClass(arg0: Int) {
         socket.trafficClass = arg0
     }
 
-    @Throws(SocketException::class) override fun setReuseAddress(arg0: Boolean) {
+    @Throws(SocketException::class)
+    override fun setReuseAddress(arg0: Boolean) {
         socket.reuseAddress = arg0
     }
 
-    @Throws(IOException::class) override fun close() {
+    @Throws(IOException::class)
+    override fun close() {
         socket.close()
     }
 
-    @Throws(IOException::class) override fun shutdownInput() {
+    @Throws(IOException::class)
+    override fun shutdownInput() {
         socket.shutdownInput()
     }
 
-    @Throws(IOException::class) override fun shutdownOutput() {
+    @Throws(IOException::class)
+    override fun shutdownOutput() {
         socket.shutdownOutput()
     }
 
@@ -143,9 +185,10 @@ class HiddenServiceSocket @JvmOverloads constructor(internalPort: Int,
 
     val socketAddress: HiddenServiceSocketAddress
     val serviceName: String
+
     init {
         val (name, handler) = mgr.publishHiddenService(hiddenServiceDir, hiddenServicePort, internalPort)
-        serviceName= name
+        serviceName = name
         socketAddress = HiddenServiceSocketAddress(name, hiddenServicePort)
         bind(InetSocketAddress(LOCAL_IP, internalPort))
         handler.attachReadyListeners(this, listeners)
@@ -171,11 +214,8 @@ class HiddenServiceSocket @JvmOverloads constructor(internalPort: Int,
 
 }
 
-@Throws(IOException::class) private fun setup(onionUrl: String,
-                                              port: Int,
-                                              numTries: Int,
-                                              streamID: String?,
-                                              tor: Tor?): Socket {
+@Throws(IOException::class)
+private fun setup(onionUrl: String, port: Int, numTries: Int, streamID: String?, tor: Tor?): Socket {
 
     val before = Calendar.getInstance().timeInMillis
     val mgr = getTorInstance(tor)
@@ -201,4 +241,5 @@ class HiddenServiceSocket @JvmOverloads constructor(internalPort: Int,
     throw IOException("Cannot connect to HS")
 }
 
-private fun getTorInstance(tor: Tor?): Tor = tor ?: Tor.default ?: throw IOException("No default Tor Instance configured")
+private fun getTorInstance(tor: Tor?): Tor = tor ?: Tor.default
+                                             ?: throw IOException("No default Tor Instance configured")
