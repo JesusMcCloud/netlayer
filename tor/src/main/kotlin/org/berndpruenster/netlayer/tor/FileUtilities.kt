@@ -130,7 +130,7 @@ fun extractContentFromArchive(destinationDirectory: File, archiveInputStream: In
                     tarIn.copyTo(outStream)
                     val mode = (entry as TarArchiveEntry).mode
 
-                    if ((mode and 64) > 0) {
+                    if ((mode and 65) > 0) {
                         f.setExecutable(true, (mode and 1) == 0)
                     }
                     if (OsType.current == OsType.MACOS) {
