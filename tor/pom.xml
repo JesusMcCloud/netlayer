@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.berndpruenster.netlayer</groupId>
         <artifactId>parent</artifactId>
-        <version>0.4.7</version>
+        <version>0.4.8</version>
     </parent>
 
     <artifactId>tor</artifactId>
@@ -28,7 +28,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
-            <version>1.15</version>
+            <version>1.18</version>
         </dependency>
         <dependency>
             <groupId>org.tukaani</groupId>
