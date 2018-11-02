@@ -1,0 +1,46 @@
+allprojects {
+    repositories { mavenCentral() }
+    apply plugin: 'maven'
+    apply plugin: 'kotlin'
+    group = 'org.berndpruenster.netlayer'
+    version = '0.5.0'
+}
+
+buildscript {
+    ext.kotlin_version = '1.3.0'
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+    }
+
+
+    repositories {
+        mavenLocal()
+
+        maven { url "https://jitpack.io" }
+        maven { url "https://raw.githubusercontent.com/JesusMcCloud/tor-binary/master/release/" }
+        maven { url "https://repo.maven.apache.org/maven2" }
+    }
+
+
+    dependencies {
+        compile group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jdk8', version: '1.3.0'
+        compile group: 'com.github.ravn', name: 'jsocks', version: '567e1cd'
+        compile group: 'io.github.microutils', name: 'kotlin-logging', version: '1.5.4'
+    }
+
+
+}
