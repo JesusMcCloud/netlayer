@@ -1,12 +1,18 @@
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+repositories {
+    maven { url "https://raw.githubusercontent.com/JesusMcCloud/tor-binary/master/release/" }
+}
 
 description = 'Tor Native Files'
 dependencies {
-  compile project(':tor')
-    compile group: 'com.cedricwalter', name: 'tor-binary-macos', version:'7.5'
-    compile group: 'com.cedricwalter', name: 'tor-binary-linux32', version:'7.5'
-    compile group: 'com.cedricwalter', name: 'tor-binary-linux64', version:'7.5'
-    compile group: 'com.cedricwalter', name: 'tor-binary-windows', version:'7.5'
-    testCompile group: 'com.beust', name: 'jcommander', version:'1.69'
-    testCompile group: 'ch.qos.logback', name: 'logback-classic', version:'1.1.3'
-    testCompile group: 'org.jetbrains.kotlin', name: 'kotlin-test', version:'1.3.0'
+    compile project(':tor')
+    compile group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jdk8', version: '1.3.0'
+    compile group: 'com.cedricwalter', name: 'tor-binary-macos', version: '7.5'
+    compile group: 'com.cedricwalter', name: 'tor-binary-linux32', version: '7.5'
+    compile group: 'com.cedricwalter', name: 'tor-binary-linux64', version: '7.5'
+    compile group: 'com.cedricwalter', name: 'tor-binary-windows', version: '7.5'
+    testCompile group: 'com.beust', name: 'jcommander', version: '1.69'
+    testCompile group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.3'
+    testCompile group: 'org.jetbrains.kotlin', name: 'kotlin-test', version: '1.3.0'
 }
