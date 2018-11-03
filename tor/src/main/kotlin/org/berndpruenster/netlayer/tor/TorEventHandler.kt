@@ -52,8 +52,8 @@ class TorEventHandler : EventHandler {
 
     fun attachReadyListeners(hs: HiddenServiceSocket, listeners: List<(socket: HiddenServiceSocket) -> Unit>) {
         synchronized(socketMap) {
-            socketMap.put(hs.socketAddress.serviceName, hs)
-            listenerMap.put(hs.socketAddress.serviceName, listeners)
+            socketMap[hs.socketAddress.serviceName] = hs
+            listenerMap[hs.socketAddress.serviceName] = listeners
         }
     }
 
@@ -99,9 +99,9 @@ class TorEventHandler : EventHandler {
         if (type == (HS_DESC) && msg.startsWith(UPLOADED)) {
             val hiddenServiceID = "${msg.split(" ")[1]}.onion"
             synchronized(socketMap) {
-                val hs = socketMap.get(hiddenServiceID) ?: return
+                val hs = socketMap[hiddenServiceID] ?: return
                 logger?.info("Hidden Service $hs is ready")
-                listenerMap.get(hiddenServiceID)?.forEach {
+                listenerMap[hiddenServiceID]?.forEach {
                     it(hs)
                 }
                 socketMap.remove(hiddenServiceID)

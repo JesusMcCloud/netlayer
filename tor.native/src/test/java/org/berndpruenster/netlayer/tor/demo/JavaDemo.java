@@ -89,14 +89,12 @@ public class JavaDemo {
             return null;
         }
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String       line  = null;
+            String       line;
             List<String> lines = new LinkedList<>();
             while ((line = reader.readLine()) != null) {
                 lines.add(line);
             }
             return lines;
-        } catch (IOException e) {
-            throw e;
         }
     }
 
