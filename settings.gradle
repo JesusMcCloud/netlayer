@@ -1,8 +1,0 @@
-rootProject.name = 'parent'
-include ':tor'
-include ':tor.native'
-include ':tor.external'
-
-project(':tor').projectDir = "$rootDir/tor" as File
-project(':tor.native').projectDir = "$rootDir/tor.native" as File
-project(':tor.external').projectDir = "$rootDir/tor.external" as File

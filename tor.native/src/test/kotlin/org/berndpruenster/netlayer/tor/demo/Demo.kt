@@ -7,16 +7,15 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.FileReader
 import java.util.*
-import kotlin.concurrent.thread
 
 
 class Demo {
 
-    @Parameter(names = ["-b"],
+    @Parameter(names = arrayOf("-b"),
                description = "path to a file containing bridge configuration lines as obtainable from bridges.torproject.org")
     internal var pathBridges: String? = null
 
-    @Parameter(names = ["-p"], description = "hidden Service Port")
+    @Parameter(names = arrayOf("-p"), description = "hidden Service Port")
     internal var port: Int? = null
 }
 
@@ -40,28 +39,28 @@ fun main(args: Array<String>) {
     hiddenServiceSocket.addReadyListener { socket ->
 
         println("Hidden Service $socket is ready")
-        thread {
+        Thread({
 
-            System.err.println("we'll try and connect to the just-published hidden service")
-            TorSocket(socket.serviceName, socket.hiddenServicePort, streamId = "Foo")
-            System.err.println("Connected to $socket. closing socket...")
-            socket.close()
-            //retry connecting
-            try {
+                   System.err.println("we'll try and connect to the just-published hidden service")
+                   TorSocket(socket.serviceName, socket.hiddenServicePort, streamId = "Foo")
+                   System.err.println("Connected to $socket. closing socket...")
+                   socket.close()
+                   //retry connecting
+                   try {
 
-                TorSocket(socket.serviceName, socket.hiddenServicePort, streamId = "Foo")
-            } catch (e: Exception) {
-                System.err.println("As exptected, connection to $socket failed!")
-            }
-            //let's connect to some regular domains using different streams
-            TorSocket("www.google.com", 80, streamId = "FOO")
-            TorSocket("www.cnn.com", 80, streamId = "BAR")
-            TorSocket("www.google.com", 80, streamId = "BAZ")
+                       TorSocket(socket.serviceName, socket.hiddenServicePort, streamId = "Foo")
+                   } catch (e: Exception) {
+                       System.err.println("As exptected, connection to $socket failed!")
+                   }
+                   //let's connect to some regular domains using different streams
+                   TorSocket("www.google.com", 80, streamId = "FOO")
+                   TorSocket("www.cnn.com", 80, streamId = "BAR")
+                   TorSocket("www.google.com", 80, streamId = "BAZ")
 
 
-            System.exit(0)
+                   System.exit(0)
 
-        }
+               }).start()
         socket.accept()
         System.err.println("$socket got a connection")
 
@@ -74,7 +73,7 @@ fun main(args: Array<String>) {
 
 
 private fun parseBridgeLines(file: String?): Collection<String>? {
-    if (file == null) return null
+    if (file == null) return null;
     BufferedReader(FileReader(file)).use { reader ->
         val lines = mutableListOf<String>()
         reader.forEachLine { line ->
