@@ -43,9 +43,9 @@
             <version>${kotlin.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.github.ravn</groupId>
+            <groupId>com.github.guardianproject</groupId>
             <artifactId>jsocks</artifactId>
-            <version>567e1cd</version>
+            <version>9ae7520</version>
         </dependency>
         <dependency>
             <groupId>io.github.microutils</groupId>

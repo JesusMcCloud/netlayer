@@ -39,6 +39,7 @@ import java.net.Socket
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.concurrent.thread
 
 /**
  * This class encapsulates data that is handled differently in Java and ANDROID
@@ -85,15 +86,17 @@ class TorController(private val socket: Socket) : TorControlConnection(socket) {
 
 class Torrc @Throws(IOException::class) internal constructor(defaults: InputStream?, overrides: Map<String, String>?) {
 
-    @Throws(IOException::class) internal constructor(defaults: InputStream, str: InputStream?) : this(defaults,
-                                                                                                      parse(str))
+    @Throws(IOException::class)
+    internal constructor(defaults: InputStream, str: InputStream?) : this(defaults, parse(str))
 
-    @Throws(IOException::class) internal constructor(defaults: InputStream, overrides: Torrc?) : this(defaults,
-                                                                                                      overrides?.rc)
+    @Throws(IOException::class)
+    internal constructor(defaults: InputStream, overrides: Torrc?) : this(defaults, overrides?.rc)
 
-    @Throws(IOException::class) constructor(src: InputStream) : this(src, str = null)
+    @Throws(IOException::class)
+    constructor(src: InputStream) : this(src, str = null)
 
-    @Throws(IOException::class) constructor(rc: LinkedHashMap<String, String>) : this(null, rc)
+    @Throws(IOException::class)
+    constructor(rc: LinkedHashMap<String, String>) : this(null, rc)
 
     private val rc = LinkedHashMap<String, String>()
 
@@ -149,29 +152,29 @@ abstract class TorContext @Throws(IOException::class) protected constructor(val 
         private val EVENTS = listOf("CIRC", "WARN", "ERR")
 
         private fun parseBootstrap(inputStream: InputStream, latch: CountDownLatch, port: AtomicReference<Int>) {
-            Thread({
-                       Thread.currentThread().name = "NFO"
-                       BufferedReader(inputStream.reader()).use { reader ->
-                           reader.forEachLine {
-                               logger?.debug { it }
-                               if (it.contains("Control listener listening on port ")) {
-                                   port.set(Integer.parseInt(it.substring(it.lastIndexOf(" ") + 1, it.length - 1)))
-                                   latch.countDown()
-                               }
-                           }
-                       }
-                   }).start()
+            thread {
+                Thread.currentThread().name = "NFO"
+                BufferedReader(inputStream.reader()).use { reader ->
+                    reader.forEachLine {
+                        logger?.debug { it }
+                        if (it.contains("Control listener listening on port ")) {
+                            port.set(Integer.parseInt(it.substring(it.lastIndexOf(" ") + 1, it.length - 1)))
+                            latch.countDown()
+                        }
+                    }
+                }
+            }
         }
 
         private fun forwardErr(inputStream: InputStream) {
-            Thread({
-                       Thread.currentThread().name = "ERR"
-                       BufferedReader(inputStream.reader()).use { reader ->
-                           reader.forEachLine {
-                               logger?.error { it }
-                           }
-                       }
-                   }).start()
+            thread {
+                Thread.currentThread().name = "ERR"
+                BufferedReader(inputStream.reader()).use { reader ->
+                    reader.forEachLine {
+                        logger?.error { it }
+                    }
+                }
+            }
         }
     }
 
@@ -247,7 +250,7 @@ abstract class TorContext @Throws(IOException::class) protected constructor(val 
                 // default. By setting this
                 // environment variable we fix that.
                 environment.put("LD_LIBRARY_PATH", workingDirectory.absolutePath)
-        //$FALL-THROUGH$
+            //$FALL-THROUGH$
             else                       -> {
             }
         }
