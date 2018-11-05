@@ -44,7 +44,7 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation "com.github.JesusMcCloud.netlayer:tor:0.4.8"
+    implementation "com.github.JesusMcCloud.netlayer:tor:0.4.9-pre"
 
 }
 repositories {
