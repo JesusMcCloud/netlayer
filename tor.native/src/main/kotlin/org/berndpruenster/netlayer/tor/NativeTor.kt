@@ -54,7 +54,58 @@ private const val OS_UNSUPPORTED = "We don't support Tor on this OS"
 
 class NativeTor @JvmOverloads @Throws(TorCtlException::class) constructor(workingDirectory: File, bridgeLines: Collection<String>? = null, torrcOverrides: Torrc? = null)
     : Tor(NativeContext(workingDirectory, torrcOverrides),
-        bridgeLines)
+        bridgeLines) {
+	
+	    override fun bootstrap(secondsBeforeTimeOut: Int,
+                          numberOfRetries: Int): Control {
+        var control: TorController? = null
+        try {
+            for (retryCount in 1..numberOfRetries) {
+                control = context.installAndStartTorOp(bridgeConfig, eventHandler)
+                control.enableNetwork()
+                // We will check every second to see if boot strapping has
+                // finally finished
+                for (secondsWaited in 1..secondsBeforeTimeOut) {
+                    if (!control.bootstrapped) {
+                        Thread.sleep(1000, 0)
+                    } else {
+                        return Control(control)
+                    }
+                }
+
+                // Bootstrapping isn't over so we need to restart and try again
+                control.shutdown()
+
+                // Experimentally we have found that if a Tor OP has run before and thus
+                // has cached descriptors
+                // and that when we try to start it again it won't start then deleting
+                // the cached data can fix this.
+                // But, if there is cached data and things do work then the Tor OP will
+                // start faster than it would
+                // if we delete everything.
+                // So our compromise is that we try to start the Tor OP 'as is' on the
+                // first round and after that
+                // we delete all the files.
+                context.deleteAllFilesButHS()
+            }
+
+            throw TorCtlException("Could not setup Tor")
+
+
+        } finally {
+            // Make sure we return the Tor OP in some kind of consistent state,
+            // even if it's 'off'.
+            if (control?.bootstrapped != true) {
+                try {
+                    context.deleteAllFilesButHS()
+                    control?.shutdown()
+                } catch (e: Exception) {
+                    logger?.error { e.localizedMessage }
+                }
+            }
+        }
+    }
+}
 
 
 class NativeContext(workingDirectory: File, overrides: Torrc?) : TorContext(workingDirectory, overrides) {

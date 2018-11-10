@@ -74,7 +74,7 @@ val logger = try {
 
 class TorCtlException(message: String? = null, cause: Throwable? = null) : Throwable(message, cause)
 
-private class Control(private val con: TorController) {
+class Control(private val con: TorController) {
 
     companion object {
         @JvmStatic
@@ -134,9 +134,8 @@ internal data class HsContainer(internal val hostname: String, internal val hand
 abstract class Tor @Throws(TorCtlException::class) protected constructor(protected val context: TorContext,
                                                                          bridgeLines: Collection<String>? = null) {
 
-
-    private val eventHandler: TorEventHandler = TorEventHandler()
-    private val bridgeConfig: List<String> = bridgeLines?.filter { it.length > 10 } ?: emptyList()
+    protected val eventHandler: TorEventHandler = TorEventHandler()
+    protected val bridgeConfig: List<String> = bridgeLines?.filter { it.length > 10 } ?: emptyList()
     private val control: Control = try {
         bootstrap()
     } catch (e: Exception) {
@@ -198,55 +197,8 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor(protect
 
 
     @Throws(InterruptedException::class, IOException::class)
-    private fun bootstrap(secondsBeforeTimeOut: Int = TOTAL_SEC_PER_STARTUP,
-                          numberOfRetries: Int = TRIES_PER_STARTUP): Control {
-        var control: TorController? = null
-        try {
-            for (retryCount in 1..numberOfRetries) {
-                control = context.installAndStartTorOp(bridgeConfig, eventHandler)
-                control.enableNetwork()
-                // We will check every second to see if boot strapping has
-                // finally finished
-                for (secondsWaited in 1..secondsBeforeTimeOut) {
-                    if (!control.bootstrapped) {
-                        Thread.sleep(1000, 0)
-                    } else {
-                        return Control(control)
-                    }
-                }
-
-                // Bootstrapping isn't over so we need to restart and try again
-                control.shutdown()
-
-                // Experimentally we have found that if a Tor OP has run before and thus
-                // has cached descriptors
-                // and that when we try to start it again it won't start then deleting
-                // the cached data can fix this.
-                // But, if there is cached data and things do work then the Tor OP will
-                // start faster than it would
-                // if we delete everything.
-                // So our compromise is that we try to start the Tor OP 'as is' on the
-                // first round and after that
-                // we delete all the files.
-                context.deleteAllFilesButHS()
-            }
-
-            throw TorCtlException("Could not setup Tor")
-
-
-        } finally {
-            // Make sure we return the Tor OP in some kind of consistent state,
-            // even if it's 'off'.
-            if (control?.bootstrapped != true) {
-                try {
-                    context.deleteAllFilesButHS()
-                    control?.shutdown()
-                } catch (e: Exception) {
-                    logger?.error { e.localizedMessage }
-                }
-            }
-        }
-    }
+    protected abstract fun bootstrap(secondsBeforeTimeOut: Int = TOTAL_SEC_PER_STARTUP,
+                          numberOfRetries: Int = TRIES_PER_STARTUP): Control
 
     @Throws(TorCtlException::class)
     @JvmOverloads
