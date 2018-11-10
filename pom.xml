@@ -17,7 +17,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- Maven plugins -->
         <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
-        <tor-binary.version>7.5</tor-binary.version>
+        <tor-binary.version>8.0.3</tor-binary.version>
     </properties>
 
     <modules>
@@ -53,4 +53,46 @@
             <version>1.6.10</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.8</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.ant</groupId>
+                        <artifactId>ant-compress</artifactId>
+                        <version>1.4</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>fetch tor-binaries</id>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <target>
+                                <taskdef resource="org/apache/ant/compress/antlib.xml"
+                                         classpathref="maven.plugin.classpath"/>
+
+                                <get
+                                    src="https://github.com/JesusMcCloud/tor-binary/archive/master.zip"
+                                    dest="${project.build.directory}/tor-binary.zip"
+                                    skipexisting="true"/>
+
+                                <unzip src="${project.build.directory}/tor-binary.zip" dest="${project.build.directory}/"/>
+
+                                <exec dir="${project.build.directory}/tor-binary-master/" executable="mvn" failonerror="true">
+                                    <arg line="install -Drevision=${tor-binary.version}"/>
+                                </exec>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
