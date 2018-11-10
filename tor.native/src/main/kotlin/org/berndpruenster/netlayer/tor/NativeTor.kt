@@ -53,11 +53,11 @@ private const val PATH_NATIVE = "native/"
 private const val OS_UNSUPPORTED = "We don't support Tor on this OS"
 
 class NativeTor @JvmOverloads @Throws(TorCtlException::class) constructor(workingDirectory: File, bridgeLines: Collection<String>? = null, torrcOverrides: Torrc? = null)
-    : Tor(NativeContext(workingDirectory, torrcOverrides),
-        bridgeLines) {
+    : Tor(NativeContext(workingDirectory, torrcOverrides)) {
 	
-	    override fun bootstrap(secondsBeforeTimeOut: Int,
-                          numberOfRetries: Int): Control {
+    private val bridgeConfig: List<String> = bridgeLines?.filter { it.length > 10 } ?: emptyList()
+
+    override fun bootstrap(secondsBeforeTimeOut: Int, numberOfRetries: Int): Control {
         var control: TorController? = null
         try {
             for (retryCount in 1..numberOfRetries) {

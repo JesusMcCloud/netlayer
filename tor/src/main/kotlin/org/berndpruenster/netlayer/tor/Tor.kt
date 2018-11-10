@@ -131,11 +131,9 @@ class Control(private val con: TorController) {
 internal data class HsContainer(internal val hostname: String, internal val handler: TorEventHandler)
 
 
-abstract class Tor @Throws(TorCtlException::class) protected constructor(protected val context: TorContext,
-                                                                         bridgeLines: Collection<String>? = null) {
+abstract class Tor @Throws(TorCtlException::class) protected constructor(protected val context: TorContext) {
 
     protected val eventHandler: TorEventHandler = TorEventHandler()
-    protected val bridgeConfig: List<String> = bridgeLines?.filter { it.length > 10 } ?: emptyList()
     private val control: Control = try {
         bootstrap()
     } catch (e: Exception) {
@@ -311,15 +309,6 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor(protect
     }
 
     fun isHiddenServiceAvailable(onionUrl: String): Boolean = control.hsAvailable(onionUrl)
-
-
-    /**
-     * Returns the root directory in which the Tor Onion Proxy keeps its files.
-     * This is mostly intended for debugging purposes.
-     *
-     * @return Working directory for Tor Onion Proxy files
-     */
-    val workingDirectory: File get() = context.workingDirectory
 
     fun shutdown() {
         synchronized(control) {
