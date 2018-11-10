@@ -60,9 +60,10 @@ private const val HS_DIR = "HiddenServiceDir"
 
 private const val HOSTNAME_TIMEOUT = 30 * 1000                                       // Milliseconds
 
-class NativeTor @JvmOverloads @Throws(TorCtlException::class) constructor(workingDirectory: File, bridgeLines: Collection<String>? = null, torrcOverrides: Torrc? = null)
-    : Tor(NativeContext(workingDirectory, torrcOverrides)) {
+class NativeTor @JvmOverloads @Throws(TorCtlException::class) constructor(workingDirectory: File, bridgeLines: Collection<String>? = null, torrcOverrides: Torrc? = null) : Tor() {
 	
+	private val context : NativeContext = NativeContext(workingDirectory, torrcOverrides)
+
     private val bridgeConfig: List<String> = bridgeLines?.filter { it.length > 10 } ?: emptyList()
 
     override fun bootstrap(secondsBeforeTimeOut: Int, numberOfRetries: Int): Control {
