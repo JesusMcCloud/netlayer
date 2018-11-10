@@ -40,10 +40,7 @@ import net.freehaven.tor.control.ConfigEntry
 import java.io.File
 import java.io.IOException
 import java.math.BigInteger
-import java.nio.file.Files
-import java.nio.file.attribute.PosixFilePermission
 import java.security.MessageDigest
-import java.util.concurrent.TimeUnit.MILLISECONDS
 
 /**
  * This class began life as TorPlugin from the Briar Project
@@ -53,17 +50,8 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 internal const val LOCAL_IP = "127.0.0.1"
 private const val TOTAL_SEC_PER_STARTUP = 4 * 60
 private const val TRIES_PER_STARTUP = 5
-
-private const val HS_PORT = "HiddenServicePort"
-
 private const val LOCAL_ADDR_FRAGMENT = "\"" + LOCAL_IP + ":"
-private const val HS_DIR = "HiddenServiceDir"
-
-
 private const val NET_LISTENERS_SOCKS = "net/listeners/socks"
-
-
-private const val HOSTNAME_TIMEOUT = 30 * 1000                                       // Milliseconds
 
 val logger = try {
     KotlinLogging.logger { }
@@ -134,7 +122,7 @@ internal data class HsContainer(internal val hostname: String, internal val hand
 abstract class Tor @Throws(TorCtlException::class) protected constructor(protected val context: TorContext) {
 
     protected val eventHandler: TorEventHandler = TorEventHandler()
-    private val control: Control = try {
+    protected val control: Control = try {
         bootstrap()
     } catch (e: Exception) {
         throw TorCtlException(cause = e)
@@ -216,97 +204,10 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor(protect
      * @throws TorCtlException
      */
     @Throws(IOException::class, TorCtlException::class)
-    internal fun publishHiddenService(hsDirName: String, hiddenServicePort: Int, localPort: Int): HsContainer {
-        synchronized(control) {
-
-            val currentHiddenServices = control.hiddenServices
-
-            val hiddenServiceDirectory = context.getHiddenServiceDirectory(hsDirName)
-
-            val config = mutableListOf<String>()
-
-            for (service in currentHiddenServices) {
-                if (service.is_default) {
-                    continue
-                }
-                if (service.key == (HS_DIR) && service.value == hiddenServiceDirectory.canonicalPath) {
-                    throw TorCtlException("Hidden Service ${hiddenServiceDirectory.canonicalPath} is already published")
-                }
-                config.add("${service.key} ${service.value}")
-            }
-
-            logger?.debug("Creating hidden service $hsDirName")
-            val hostnameFile = context.getHostNameFile(hsDirName)
-
-            if (!(hostnameFile.parentFile.exists() || hostnameFile.parentFile.mkdirs())) {
-                throw  TorCtlException("Could not create hostnameFile parent directory")
-            }
-
-            if (!(hostnameFile.exists() || hostnameFile.createNewFile())) {
-                throw  TorCtlException("Could not create hostnameFile")
-            }
-            // Thanks, Ubuntu!
-            try {
-                if (OsType.current.isUnixoid()) {
-                    val perms = mutableSetOf(PosixFilePermission.OWNER_READ,
-                                             PosixFilePermission.OWNER_WRITE,
-                                             PosixFilePermission.OWNER_EXECUTE)
-                    Files.setPosixFilePermissions(hiddenServiceDirectory.toPath(), perms)
-                }
-            } catch (e: Exception) {
-                logger?.error("could not set permissions, hidden service $hsDirName will most probably not work", e)
-            }
-
-            control.enableHiddenServiceEvents()
-            // Watch for the hostname file being created/updated
-            val hostNameFileObserver = context.generateWriteObserver(hostnameFile)
-            // Use the control connection to update the Tor config
-            config.addAll(listOf("${HS_DIR} ${hostnameFile.parentFile.canonicalPath}",
-                                 "${HS_PORT} $hiddenServicePort ${LOCAL_IP}:$localPort"))
-            control.saveConfig(config)
-            // Wait for the hostname file to be created/updated
-            if (!hostNameFileObserver.poll(HOSTNAME_TIMEOUT.toLong(), MILLISECONDS)) {
-                hostnameFile.parentFile.log()
-                throw RuntimeException("Wait for hidden service hostname file to be created expired.")
-            }
-
-            // Publish the hidden service's onion hostname in transport properties
-            val hostname = hostnameFile.readBytes().toString(Charsets.UTF_8).trim()
-            logger?.debug("PUBLISH: Hidden service config has completed: $config")
-
-            return HsContainer(hostname, eventHandler)
-        }
-    }
+    internal abstract fun publishHiddenService(hsDirName: String, hiddenServicePort: Int, localPort: Int): HsContainer
 
     @Throws(TorCtlException::class, IOException::class)
-    fun unpublishHiddenService(hsDir: String) {
-        synchronized(control) {
-
-            val currentHiddenServices = control.hiddenServices
-            val hiddenServiceDirectory = context.getHiddenServiceDirectory(hsDir)
-            val conf = mutableListOf<String>()
-            var removeNext = false
-            for (service in currentHiddenServices) {
-                if (removeNext) {
-                    removeNext = false
-                    continue
-                }
-                if (service.is_default) {
-                    continue
-                }
-
-
-                if (service.key == (HS_DIR) && service.value == hiddenServiceDirectory.canonicalPath) {
-                    removeNext = true
-                    continue
-                }
-
-                conf.add("${service.key} ${service.value}")
-            }
-            logger?.debug("UNPUBL Hidden service config has completed: $conf")
-            control.saveConfig(conf)
-        }
-    }
+    abstract fun unpublishHiddenService(hsDir: String)
 
     fun isHiddenServiceAvailable(onionUrl: String): Boolean = control.hsAvailable(onionUrl)
 
