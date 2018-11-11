@@ -18,6 +18,7 @@
         <!-- Maven plugins -->
         <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
         <tor-binary.version>8.0.3</tor-binary.version>
+        <force-update-tor-binaries>false</force-update-tor-binaries>
     </properties>
 
     <modules>
@@ -57,6 +58,25 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.honton.chas</groupId>
+                <artifactId>exists-maven-plugin</artifactId>
+                <version>0.0.6</version>
+                <configuration>
+                    <project>com.cedricwalter:tor-binary-windows:${tor-binary.version}</project>
+                    <artifact>tor-binary-windows-${tor-binary.version}.pom</artifact>
+                    <property>tor-binary-exists</property>
+                    <skip>${force-update-tor-binaries}</skip>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>local</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <version>1.8</version>
                 <dependencies>
@@ -71,10 +91,7 @@
                         <id>fetch tor-binaries</id>
                         <phase>generate-resources</phase>
                         <configuration>
-                            <target>
-                                <taskdef resource="org/apache/ant/compress/antlib.xml"
-                                         classpathref="maven.plugin.classpath"/>
-
+                            <target unless="${tor-binary-exists}">
                                 <get
                                     src="https://github.com/JesusMcCloud/tor-binary/archive/master.zip"
                                     dest="${project.build.directory}/tor-binary.zip"
