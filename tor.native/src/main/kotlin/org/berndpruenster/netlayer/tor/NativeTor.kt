@@ -205,6 +205,12 @@ class NativeTor @JvmOverloads @Throws(TorCtlException::class) constructor(workin
             control.saveConfig(conf)
         }
     }
+
+    override fun shutdown() {
+        synchronized(control) {
+            control.shutdown()
+        }
+    }
 }
 
 

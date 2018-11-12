@@ -211,9 +211,5 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor() {
 
     fun isHiddenServiceAvailable(onionUrl: String): Boolean = control.hsAvailable(onionUrl)
 
-    fun shutdown() {
-        synchronized(control) {
-            control.shutdown()
-        }
-    }
+    abstract fun shutdown()
 }
