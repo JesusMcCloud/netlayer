@@ -28,6 +28,7 @@ internal const val LOCAL_IP = "127.0.0.1"
 
 class ExternalTor @Throws(TorCtlException::class) constructor(controlPort: Int, cookieFile: File) : Tor() {
     val EVENTS = listOf("CIRC", "WARN", "ERR")
+    private var ctrlCon: TorController
 
     init {
 		
@@ -35,7 +36,7 @@ class ExternalTor @Throws(TorCtlException::class) constructor(controlPort: Int, 
         val sock = Socket(LOCAL_IP, controlPort)
 
         // Open a control connection and authenticate using the cookie file
-        val ctrlCon = TorController(sock)
+        ctrlCon = TorController(sock)
 
         // authenticate
         var cookie: ByteArray?
@@ -46,9 +47,6 @@ class ExternalTor @Throws(TorCtlException::class) constructor(controlPort: Int, 
             ctrlCon.setEventHandler(eventHandler)
             ctrlCon.setEvents(EVENTS)
 
-            // test connection (debugging)
-            System.out.println(ctrlCon.getInfo("version"))
-
             control = Control(ctrlCon);
         } catch (e: Exception) {
 			e.printStackTrace()
@@ -57,11 +55,11 @@ class ExternalTor @Throws(TorCtlException::class) constructor(controlPort: Int, 
     }
 	
     override fun publishHiddenService(hsDirName: String, hiddenServicePort: Int, localPort: Int): HsContainer {
-        return HsContainer("asdf", eventHandler)
+        return HsContainer(ctrlCon.createHiddenService(hiddenServicePort), eventHandler)
     }
 
     override fun unpublishHiddenService(hsDir: String) {
-
+        ctrlCon.destroyHiddenService(hsDir)
     }
 	
     override fun shutdown() {
