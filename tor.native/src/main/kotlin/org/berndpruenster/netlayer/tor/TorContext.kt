@@ -58,30 +58,10 @@ private const val DIRECTIVE_PIDFILE = "PidFile "
 private const val DIRECTIVE_DATA_DIRECTORY = "DataDirectory "
 private const val DIRECTIVE_COOKIE_AUTH_FILE = "CookieAuthFile "
 
-private const val STATUS_BOOTSTRAPPED = "status/bootstrap-phase"
-private const val DISABLE_NETWORK = "DisableNetwork"
 private const val OWNER = "__OwningControllerProcess"
 private const val COOKIE_TIMEOUT = 3 * 1000                                        // Milliseconds
 
 
-class TorController(private val socket: Socket) : TorControlConnection(socket) {
-
-    val bootstrapped: Boolean
-        get() = getInfo(STATUS_BOOTSTRAPPED)?.contains("PROGRESS=100") ?: false
-
-    fun shutdown() {
-        socket.use {
-            logger?.debug("Stopping Tor")
-            setConf(DISABLE_NETWORK, "1")
-            shutdownTor("TERM")
-        }
-    }
-
-    fun enableNetwork() {
-        setConf(DISABLE_NETWORK, "0")
-    }
-
-}
 
 class Torrc @Throws(IOException::class) internal constructor(defaults: InputStream?, overrides: Map<String, String>?) {
 
@@ -284,8 +264,8 @@ abstract class TorContext @Throws(IOException::class) protected constructor(val 
 
     abstract fun getByName(fileName: String): InputStream
 
-    internal fun getHiddenServiceDirectory(hsDir: String): File {
-        return File(workingDirectory, "/${DIR_HS_ROOT}/$hsDir")
+    fun getHiddenServiceDirectory(hsDir: String): File {
+        return File(workingDirectory, "/$DIR_HS_ROOT/$hsDir")
     }
 
 
@@ -302,7 +282,7 @@ abstract class TorContext @Throws(IOException::class) protected constructor(val 
      *           - If we are, well, interrupted
      */
     @Throws(IOException::class)
-    internal fun installAndStartTorOp(bridgeConfig: List<String>, eventHandler: TorEventHandler): TorController {
+    fun installAndStartTorOp(bridgeConfig: List<String>, eventHandler: TorEventHandler): TorController {
 
         installAndConfigureFiles(bridgeConfig)
 

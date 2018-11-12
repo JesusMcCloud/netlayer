@@ -37,9 +37,11 @@ package org.berndpruenster.netlayer.tor
 import com.runjva.sourceforge.jsocks.protocol.Socks5Proxy
 import mu.KotlinLogging
 import net.freehaven.tor.control.ConfigEntry
+import net.freehaven.tor.control.TorControlConnection
 import java.io.File
 import java.io.IOException
 import java.math.BigInteger
+import java.net.Socket
 import java.security.MessageDigest
 
 /**
@@ -47,11 +49,14 @@ import java.security.MessageDigest
  */
 
 
-internal const val LOCAL_IP = "127.0.0.1"
+const val LOCAL_IP = "127.0.0.1"
 private const val TOTAL_SEC_PER_STARTUP = 4 * 60
 private const val TRIES_PER_STARTUP = 5
 private const val LOCAL_ADDR_FRAGMENT = "\"" + LOCAL_IP + ":"
 private const val NET_LISTENERS_SOCKS = "net/listeners/socks"
+
+private const val STATUS_BOOTSTRAPPED = "status/bootstrap-phase"
+private const val DISABLE_NETWORK = "DisableNetwork"
 
 val logger = try {
     KotlinLogging.logger { }
@@ -61,6 +66,26 @@ val logger = try {
 
 
 class TorCtlException(message: String? = null, cause: Throwable? = null) : Throwable(message, cause)
+
+
+class TorController(private val socket: Socket) : TorControlConnection(socket) {
+
+    val bootstrapped: Boolean
+        get() = getInfo(STATUS_BOOTSTRAPPED)?.contains("PROGRESS=100") ?: false
+
+    fun shutdown() {
+        socket.use {
+            logger?.debug("Stopping Tor")
+            setConf(DISABLE_NETWORK, "1")
+            shutdownTor("TERM")
+        }
+    }
+
+    fun enableNetwork() {
+        setConf(DISABLE_NETWORK, "0")
+    }
+
+}
 
 class Control(private val con: TorController) {
 
@@ -81,7 +106,7 @@ class Control(private val con: TorController) {
     }
 
 
-    internal fun shutdown() {
+    fun shutdown() {
         synchronized(running) {
             if (!running) return
             running = false
@@ -116,7 +141,7 @@ class Control(private val con: TorController) {
 
 }
 
-internal data class HsContainer(internal val hostname: String, internal val handler: TorEventHandler)
+data class HsContainer(internal val hostname: String, internal val handler: TorEventHandler)
 
 
 abstract class Tor @Throws(TorCtlException::class) protected constructor() {
@@ -204,7 +229,7 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor() {
      * @throws TorCtlException
      */
     @Throws(IOException::class, TorCtlException::class)
-    internal abstract fun publishHiddenService(hsDirName: String, hiddenServicePort: Int, localPort: Int): HsContainer
+    abstract fun publishHiddenService(hsDirName: String, hiddenServicePort: Int, localPort: Int): HsContainer
 
     @Throws(TorCtlException::class, IOException::class)
     abstract fun unpublishHiddenService(hsDir: String)
