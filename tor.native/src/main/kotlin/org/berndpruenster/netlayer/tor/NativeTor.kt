@@ -66,48 +66,54 @@ class NativeTor @JvmOverloads @Throws(TorCtlException::class) constructor(workin
 
     private val bridgeConfig: List<String> = bridgeLines?.filter { it.length > 10 } ?: emptyList()
 
-    override fun bootstrap(secondsBeforeTimeOut: Int, numberOfRetries: Int): Control {
-        var control: TorController? = null
+    init {
+        var torController: TorController? = null
         try {
-            for (retryCount in 1..numberOfRetries) {
-                control = context.installAndStartTorOp(bridgeConfig, eventHandler)
-                control.enableNetwork()
+            var done = false
+            loop@ for (retryCount in 1..TRIES_PER_STARTUP) {
+                torController = context.installAndStartTorOp(bridgeConfig, eventHandler)
+                torController.enableNetwork()
                 // We will check every second to see if boot strapping has
                 // finally finished
-                for (secondsWaited in 1..secondsBeforeTimeOut) {
-                    if (!control.bootstrapped) {
+                for (secondsWaited in 1..TOTAL_SEC_PER_STARTUP) {
+                    if (!torController.bootstrapped) {
                         Thread.sleep(1000, 0)
                     } else {
-                        return Control(control)
+                        control = Control(torController)
+                        done = true
+                        break@loop
                     }
                 }
+                if(null == control) {
 
-                // Bootstrapping isn't over so we need to restart and try again
-                control.shutdown()
+                    // Bootstrapping isn't over so we need to restart and try again
+                    torController.shutdown()
 
-                // Experimentally we have found that if a Tor OP has run before and thus
-                // has cached descriptors
-                // and that when we try to start it again it won't start then deleting
-                // the cached data can fix this.
-                // But, if there is cached data and things do work then the Tor OP will
-                // start faster than it would
-                // if we delete everything.
-                // So our compromise is that we try to start the Tor OP 'as is' on the
-                // first round and after that
-                // we delete all the files.
-                context.deleteAllFilesButHS()
+                    // Experimentally we have found that if a Tor OP has run before and thus
+                    // has cached descriptors
+                    // and that when we try to start it again it won't start then deleting
+                    // the cached data can fix this.
+                    // But, if there is cached data and things do work then the Tor OP will
+                    // start faster than it would
+                    // if we delete everything.
+                    // So our compromise is that we try to start the Tor OP 'as is' on the
+                    // first round and after that
+                    // we delete all the files.
+                    context.deleteAllFilesButHS()
+                }
             }
 
-            throw TorCtlException("Could not setup Tor")
+            if(!done)
+                throw TorCtlException("Could not setup Tor")
 
 
         } finally {
             // Make sure we return the Tor OP in some kind of consistent state,
             // even if it's 'off'.
-            if (control?.bootstrapped != true) {
+            if (torController?.bootstrapped != true) {
                 try {
                     context.deleteAllFilesButHS()
-                    control?.shutdown()
+                    torController?.shutdown()
                 } catch (e: Exception) {
                     logger?.error { e.localizedMessage }
                 }

@@ -50,8 +50,6 @@ import java.security.MessageDigest
 
 
 const val LOCAL_IP = "127.0.0.1"
-private const val TOTAL_SEC_PER_STARTUP = 4 * 60
-private const val TRIES_PER_STARTUP = 5
 private const val LOCAL_ADDR_FRAGMENT = "\"" + LOCAL_IP + ":"
 private const val NET_LISTENERS_SOCKS = "net/listeners/socks"
 
@@ -146,17 +144,11 @@ data class HsContainer(internal val hostname: String, internal val handler: TorE
 
 abstract class Tor @Throws(TorCtlException::class) protected constructor() {
 
-    protected val eventHandler: TorEventHandler = TorEventHandler()
-    protected val control: Control = try {
-        bootstrap()
-    } catch (e: Exception) {
-        throw TorCtlException(cause = e)
-    }
-        get() {
-            if (!field.running) throw TorCtlException("Tor has already been shutdown!")
-            return field
-        }
+    protected val TOTAL_SEC_PER_STARTUP = 4 * 60
+    protected val TRIES_PER_STARTUP = 5
 
+    protected val eventHandler: TorEventHandler = TorEventHandler()
+    lateinit var control: Control
 
     companion object {
 
@@ -205,11 +197,6 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor() {
 
         }
     }
-
-
-    @Throws(InterruptedException::class, IOException::class)
-    protected abstract fun bootstrap(secondsBeforeTimeOut: Int = TOTAL_SEC_PER_STARTUP,
-                          numberOfRetries: Int = TRIES_PER_STARTUP): Control
 
     @Throws(TorCtlException::class)
     @JvmOverloads
