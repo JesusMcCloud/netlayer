@@ -20,8 +20,31 @@ package org.berndpruenster.netlayer.tor
 import com.runjva.sourceforge.jsocks.protocol.SocksSocket
 import java.net.InetAddress
 import java.net.ServerSocket
+import java.net.Socket
 import java.net.SocketAddress
 
+
+class ExternalTor @JvmOverloads @Throws(TorCtlException::class) constructor(controlPort: Int, authentication: String) : Tor() {
+    init {
+
+        // connect to controlPort
+        // authenticate
+
+        this.control = Control(TorController(Socket()))
+    }
+	
+    override fun publishHiddenService(hsDirName: String, hiddenServicePort: Int, localPort: Int): HsContainer {
+        return HsContainer("asdf", eventHandler)
+    }
+
+    override fun unpublishHiddenService(hsDir: String) {
+
+    }
+	
+    override fun shutdown() {
+        // disconnect from controlPort
+    }
+}
 
 class ExternalTorSocket
 @JvmOverloads constructor(proxyPort: Int, private val destination: String, port: Int, streamID: String? = null) :
