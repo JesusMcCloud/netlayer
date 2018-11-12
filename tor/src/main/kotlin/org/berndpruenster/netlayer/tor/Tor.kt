@@ -99,11 +99,6 @@ class Control(private val con: TorController) {
     internal var running = true
         private set
 
-    init {
-        Runtime.getRuntime().addShutdownHook(Thread({ shutdown() }))
-    }
-
-
     fun shutdown() {
         synchronized(running) {
             if (!running) return

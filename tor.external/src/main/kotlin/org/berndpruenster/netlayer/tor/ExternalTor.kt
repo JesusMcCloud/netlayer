@@ -18,19 +18,42 @@ various open source licenses (www.opensource.org).
 package org.berndpruenster.netlayer.tor
 
 import com.runjva.sourceforge.jsocks.protocol.SocksSocket
+import java.net.Socket
 import java.net.InetAddress
 import java.net.ServerSocket
-import java.net.Socket
 import java.net.SocketAddress
+import java.io.File
 
+internal const val LOCAL_IP = "127.0.0.1"
 
-class ExternalTor @JvmOverloads @Throws(TorCtlException::class) constructor(controlPort: Int, authentication: String) : Tor() {
+class ExternalTor @Throws(TorCtlException::class) constructor(controlPort: Int, cookieFile: File) : Tor() {
+    val EVENTS = listOf("CIRC", "WARN", "ERR")
+
     init {
-
+		
         // connect to controlPort
-        // authenticate
+        val sock = Socket(LOCAL_IP, controlPort)
 
-        this.control = Control(TorController(Socket()))
+        // Open a control connection and authenticate using the cookie file
+        val ctrlCon = TorController(sock)
+
+        // authenticate
+        var cookie: ByteArray?
+        try {
+            cookie = cookieFile.readBytes()
+            ctrlCon.authenticate(cookie)
+			
+            ctrlCon.setEventHandler(eventHandler)
+            ctrlCon.setEvents(EVENTS)
+
+            // test connection (debugging)
+            System.out.println(ctrlCon.getInfo("version"))
+
+            control = Control(ctrlCon);
+        } catch (e: Exception) {
+			e.printStackTrace()
+			throw e
+        }
     }
 	
     override fun publishHiddenService(hsDirName: String, hiddenServicePort: Int, localPort: Int): HsContainer {

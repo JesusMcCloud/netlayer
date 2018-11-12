@@ -80,6 +80,7 @@ class NativeTor @JvmOverloads @Throws(TorCtlException::class) constructor(workin
                         Thread.sleep(1000, 0)
                     } else {
                         control = Control(torController)
+                        Runtime.getRuntime().addShutdownHook(Thread({ control.shutdown() }))
                         done = true
                         break@loop
                     }
