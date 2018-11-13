@@ -33,7 +33,7 @@
         </repository>
         <repository>
             <id>tor-binary</id>
-            <url>https://raw.githubusercontent.com/JesusMcCloud/tor-binary/master/release/</url>
+            <url>https://raw.githubusercontent.com/JesusMcCloud/tor-binary/${tor-binary.version}/release/</url>
         </repository>
     </repositories>
     <dependencies>
