@@ -9,16 +9,29 @@ import kotlin.concurrent.thread
 
 fun main(args: Array<String>) {
 
-	Tor.default = ExternalTor(9151, File("/path/to/tor/control_auth_cookie"))
+    // null authentication
+    Tor.default = ExternalTor(9151)
 
-	var server = HiddenServiceSocket(10025)
-    
-	// wait for the service to be published
-	Thread.sleep(25000)
+    // password authentication
+    //Tor.default = ExternalTor(9151, "password")
 
-	// create simple hidden service service
-	thread { BufferedReader(InputStreamReader(server.accept().getInputStream())).use { println(it.readLine()) } }
+    // cookie authentication
+    //Tor.default = ExternalTor(9151, File("/path/to/tor/control_auth_cookie"))
 
-	// talk to the newly created hidden service
-	ExternalTorSocket(9150, server.serviceName + ".onion", 10025).outputStream.write("Hello Tor\n".toByteArray())
+    // secure cookie authentication
+    //Tor.default = ExternalTor(9151, File("/path/to/tor//control_auth_cookie"), true)
+
+    var server = HiddenServiceSocket(10025)
+
+    // wait for the service to be published
+    Thread.sleep(25000)
+
+    // create simple hidden service service
+    thread { BufferedReader(InputStreamReader(server.accept().getInputStream())).use { println(it.readLine()) } }
+
+    // talk to the newly created hidden service
+    ExternalTorSocket(9150, server.serviceName + ".onion", 10025).outputStream.write("Hello Tor\n".toByteArray())
+
+    System.out.println("done")
+
 }
