@@ -40,6 +40,12 @@ class ExternalTor : Tor {
         }
     }
 
+    private class PasswordAuthenticator(private val password: String) : Authenticator() {
+        override fun authenticate(controlConnection: TorController) {
+            controlConnection.authenticate(password.toByteArray())
+        }
+    }
+
     private class CookieAuthenticator(private val cookieFile: File) : Authenticator() {
         override fun authenticate(controlConnection: TorController) {
             var cookie: ByteArray?
@@ -61,7 +67,11 @@ class ExternalTor : Tor {
     @Throws(TorCtlException::class)
     constructor(controlPort: Int, cookieFile: File) {
         connect(controlPort, CookieAuthenticator(cookieFile))
+    }
 
+    @Throws(TorCtlException::class)
+    constructor(controlPort: Int, password: String) {
+        connect(controlPort, PasswordAuthenticator(password))
     }
 
     private fun connect(controlPort: Int, authenticator: Authenticator) {
