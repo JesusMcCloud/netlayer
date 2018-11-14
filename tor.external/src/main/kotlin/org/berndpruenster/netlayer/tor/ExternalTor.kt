@@ -62,6 +62,42 @@ class ExternalTor : Tor {
         }
     }
 
+    /**
+     * 3.24. AUTHCHALLENGE
+     *
+     * The syntax is: "AUTHCHALLENGE" SP "SAFECOOKIE" SP ClientNonce CRLF
+     *
+     * ClientNonce = 2*HEXDIG / QuotedString
+     *
+     * This command is used to begin the authentication routine for the SAFECOOKIE
+     * method of authentication.
+     *
+     * If the server accepts the command, the server reply format is: "250
+     * AUTHCHALLENGE" SP "SERVERHASH=" ServerHash SP "SERVERNONCE=" ServerNonce CRLF
+     *
+     * ServerHash = 64*64HEXDIG ServerNonce = 64*64HEXDIG
+     *
+     * The ClientNonce, ServerHash, and ServerNonce values are encoded/decoded in
+     * the same way as the argument passed to the AUTHENTICATE command. ServerNonce
+     * MUST be 32 bytes long.
+     *
+     * ServerHash is computed as: HMAC-SHA256("Tor safe cookie authentication
+     * server-to-controller hash", CookieString | ClientNonce | ServerNonce) (with
+     * the HMAC key as its first argument)
+     *
+     * After a controller sends a successful AUTHCHALLENGE command, the next command
+     * sent on the connection must be an AUTHENTICATE command, and the only
+     * authentication string which that AUTHENTICATE command will accept is:
+     * HMAC-SHA256("Tor safe cookie authentication controller-to-server hash",
+     * CookieString | ClientNonce | ServerNonce)
+     *
+     * [Unlike other commands besides AUTHENTICATE, AUTHCHALLENGE may be used (but
+     * only once!) before AUTHENTICATE.]
+     *
+     * [AUTHCHALLENGE was added in Tor 0.2.3.13-alpha.]
+     *
+     * @throws IOException
+     */
     private class SafeCookieAuthenticator(private val cookieFile: File) : Authenticator() {
         override fun authenticate(controlConnection: TorController) {
             // create client nonce
@@ -127,7 +163,7 @@ class ExternalTor : Tor {
         ctrlCon.setEventHandler(eventHandler)
         ctrlCon.setEvents(EVENTS)
 
-        control = Control(ctrlCon);
+        control = Control(ctrlCon)
     }
 
 	
