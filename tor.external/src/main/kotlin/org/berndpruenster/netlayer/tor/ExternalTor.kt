@@ -26,12 +26,35 @@ import java.io.File
 
 internal const val LOCAL_IP = "127.0.0.1"
 
-class ExternalTor @Throws(TorCtlException::class) constructor(controlPort: Int, cookieFile: File) : Tor() {
+class ExternalTor : Tor {
     val EVENTS = listOf("CIRC", "WARN", "ERR")
-    private var ctrlCon: TorController
+    private lateinit var ctrlCon: TorController
 
-    init {
-		
+    private abstract class Authenticator {
+        abstract fun authenticate(controlConnection: TorController)
+    }
+
+    private class CookieAuthenticator(private val cookieFile: File) : Authenticator() {
+        override fun authenticate(controlConnection: TorController) {
+            var cookie: ByteArray?
+            try {
+                cookie = cookieFile.readBytes()
+                controlConnection.authenticate(cookie)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                throw e
+            }
+        }
+    }
+
+    @Throws(TorCtlException::class)
+    constructor(controlPort: Int, cookieFile: File) {
+        connect(controlPort, CookieAuthenticator(cookieFile))
+
+    }
+
+    private fun connect(controlPort: Int, authenticator: Authenticator) {
+
         // connect to controlPort
         val sock = Socket(LOCAL_IP, controlPort)
 
@@ -39,20 +62,14 @@ class ExternalTor @Throws(TorCtlException::class) constructor(controlPort: Int, 
         ctrlCon = TorController(sock)
 
         // authenticate
-        var cookie: ByteArray?
-        try {
-            cookie = cookieFile.readBytes()
-            ctrlCon.authenticate(cookie)
-			
-            ctrlCon.setEventHandler(eventHandler)
-            ctrlCon.setEvents(EVENTS)
+        authenticator.authenticate(ctrlCon)
 
-            control = Control(ctrlCon);
-        } catch (e: Exception) {
-			e.printStackTrace()
-			throw e
-        }
+        ctrlCon.setEventHandler(eventHandler)
+        ctrlCon.setEvents(EVENTS)
+
+        control = Control(ctrlCon);
     }
+
 	
     override fun publishHiddenService(hsDirName: String, hiddenServicePort: Int, localPort: Int): HsContainer {
         return HsContainer(ctrlCon.createHiddenService(hiddenServicePort), eventHandler)
