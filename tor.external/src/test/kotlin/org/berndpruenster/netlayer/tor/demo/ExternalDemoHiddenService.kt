@@ -11,7 +11,7 @@ fun main(args: Array<String>) {
 
 	Tor.default = ExternalTor(9151, File("/path/to/tor/control_auth_cookie"))
 
-	var server = HiddenServiceSocket(10025,"N/A")
+	var server = HiddenServiceSocket(10025)
     
 	// wait for the service to be published
 	Thread.sleep(25000)
