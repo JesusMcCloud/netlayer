@@ -23,6 +23,9 @@ import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.SocketAddress
 import java.io.File
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
+import kotlin.random.Random
 
 internal const val LOCAL_IP = "127.0.0.1"
 
@@ -59,19 +62,55 @@ class ExternalTor : Tor {
         }
     }
 
+    private class SafeCookieAuthenticator(private val cookieFile: File) : Authenticator() {
+        override fun authenticate(controlConnection: TorController) {
+            // create client nonce
+            val clientNonce = Random.Default.nextBytes(32)
+            val result = controlConnection.authChallenge(clientNonce)
+
+            // check if server knows the contents of the cookie
+            val keySpec = SecretKeySpec("Tor safe cookie authentication server-to-controller hash".toByteArray(), "HmacSHA256")
+            val mac = Mac.getInstance("HmacSHA256")
+            mac.init(keySpec)
+            try {
+                var cookie = cookieFile.readBytes()
+                mac.update(cookie)
+                mac.update(clientNonce)
+                mac.update(result["SERVERNONCE"])
+                val serverHash = mac.doFinal()
+                if(!serverHash.contentEquals(result["SERVERHASH"]!!))
+                    throw Exception("Tor Safecookie authentication failed: Serverhash does not match computed hash")
+
+                // calculate authentication string
+                val keySpec = SecretKeySpec("Tor safe cookie authentication controller-to-server hash".toByteArray(), "HmacSHA256")
+                mac.init(keySpec)
+                mac.update(cookie)
+                mac.update(clientNonce)
+                mac.update(result["SERVERNONCE"])
+                controlConnection.authenticate(mac.doFinal())
+            } catch (e: Exception) {
+                e.printStackTrace()
+                throw e
+            }
+        }
+    }
+
     @Throws(TorCtlException::class)
     constructor(controlPort: Int) {
         connect(controlPort, NullAuthenticator())
     }
 
     @Throws(TorCtlException::class)
-    constructor(controlPort: Int, cookieFile: File) {
-        connect(controlPort, CookieAuthenticator(cookieFile))
+    constructor(controlPort: Int, password: String) {
+        connect(controlPort, PasswordAuthenticator(password))
     }
 
     @Throws(TorCtlException::class)
-    constructor(controlPort: Int, password: String) {
-        connect(controlPort, PasswordAuthenticator(password))
+    constructor(controlPort: Int, cookieFile: File, useSafeCookieAuthentication: Boolean = false) {
+        if(useSafeCookieAuthentication)
+            connect(controlPort, SafeCookieAuthenticator(cookieFile))
+        else
+            connect(controlPort, CookieAuthenticator(cookieFile))
     }
 
     private fun connect(controlPort: Int, authenticator: Authenticator) {
