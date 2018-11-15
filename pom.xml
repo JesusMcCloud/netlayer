@@ -66,24 +66,34 @@
                         <artifactId>ant-compress</artifactId>
                         <version>1.4</version>
                     </dependency>
+                    <dependency>
+                        <groupId>ant-contrib</groupId>
+                        <artifactId>ant-contrib</artifactId>
+                        <version>20020829</version>
+                    </dependency>
                 </dependencies>
                 <executions>
                     <execution>
                         <id>fetch tor-binaries</id>
                         <phase>generate-resources</phase>
                         <configuration>
-                            <target unless="${tor-binary-exists}">
-                                <get
-                                    src="https://github.com/JesusMcCloud/tor-binary/archive/master.zip"
-                                    dest="${project.build.directory}/tor-binary.zip"
-                                    skipexisting="true"/>
+                            <tasks>
+                                <taskdef resource="net/sf/antcontrib/antcontrib.properties"
+                                         classpathref="maven.plugin.classpath" />
+                                <if><not><available file="${project.build.directory}/tor-binary-master/tor-binary-geoip/target/tor-binary-geoip-${tor-binary.version}.jar"
+                                                    property="tor-binary-exists" /></not><then>
+                                    <get
+                                        src="https://github.com/JesusMcCloud/tor-binary/archive/master.zip"
+                                        dest="${project.build.directory}/tor-binary.zip"
+                                        skipexisting="true"/>
 
-                                <unzip src="${project.build.directory}/tor-binary.zip" dest="${project.build.directory}/"/>
+                                    <unzip src="${project.build.directory}/tor-binary.zip" dest="${project.build.directory}/"/>
 
-                                <exec dir="${project.build.directory}/tor-binary-master/" executable="mvn" failonerror="true">
-                                    <arg line="install -Drevision=${tor-binary.version}"/>
-                                </exec>
-                            </target>
+                                    <exec dir="${project.build.directory}/tor-binary-master/" executable="mvn" failonerror="true">
+                                        <arg line="install -Drevision=${tor-binary.version}"/>
+                                    </exec>
+                                </then></if>
+                            </tasks>
                         </configuration>
                         <goals>
                             <goal>run</goal>
