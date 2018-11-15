@@ -26,6 +26,8 @@ import java.io.File
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import kotlin.random.Random
+import java.nio.file.Files
+import java.nio.file.attribute.PosixFilePermission
 
 internal const val LOCAL_IP = "127.0.0.1"
 
@@ -168,8 +170,46 @@ class ExternalTor : Tor {
 
 	
     override fun publishHiddenService(hsDirName: String, hiddenServicePort: Int, localPort: Int): HsContainer {
-        val result = ctrlCon.createHiddenService(hiddenServicePort)
-        return HsContainer(result.serviceID, eventHandler)
+
+        val hostnameFile = File("$hsDirName/hostname")
+        val keyFile = File("$hsDirName/private_key")
+
+        if(keyFile.exists()) {
+            // if the service has already been started once, we reuse the data
+            val result = ctrlCon.createHiddenService(hiddenServicePort, keyFile.readText())
+            return HsContainer(result.serviceID, eventHandler)
+        } else {
+            // else, we create a fresh service with a fresh key
+            // and while we are at it, we persist the hs information for future use
+            if (!(hostnameFile.parentFile.exists() || hostnameFile.parentFile.mkdirs())) {
+                throw  TorCtlException("Could not create hostnameFile parent directory")
+            }
+
+            if (!(hostnameFile.exists() || hostnameFile.createNewFile())) {
+                throw  TorCtlException("Could not create hostnameFile")
+            }
+
+            if (!(keyFile.exists() || keyFile.createNewFile())) {
+                throw  TorCtlException("Could not create keyFile")
+            }
+
+            // Thanks, Ubuntu!
+            try {
+                if (OsType.current.isUnixoid()) {
+                    val perms = mutableSetOf(PosixFilePermission.OWNER_READ,
+                            PosixFilePermission.OWNER_WRITE,
+                            PosixFilePermission.OWNER_EXECUTE)
+                    Files.setPosixFilePermissions(hostnameFile.parentFile.toPath(), perms)
+                }
+            } catch (e: Exception) {
+                logger?.error("could not set permissions, hidden service $hsDirName will most probably not work", e)
+            }
+
+            val result = ctrlCon.createHiddenService(hiddenServicePort)
+            hostnameFile.appendText(result.serviceID+".onion")
+            keyFile.appendText(result.privateKey)
+            return HsContainer(result.serviceID, eventHandler)
+        }
     }
 
     override fun unpublishHiddenService(hsDir: String) {
