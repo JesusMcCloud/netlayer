@@ -112,9 +112,9 @@ class ExternalTor : Tor {
                 var cookie = cookieFile.readBytes()
                 mac.update(cookie)
                 mac.update(clientNonce)
-                mac.update(result["SERVERNONCE"])
+                mac.update(result.serverNonce)
                 val serverHash = mac.doFinal()
-                if(!serverHash.contentEquals(result["SERVERHASH"]!!))
+                if(!serverHash.contentEquals(result.serverHash))
                     throw Exception("Tor Safecookie authentication failed: Serverhash does not match computed hash")
 
                 // calculate authentication string
@@ -122,7 +122,7 @@ class ExternalTor : Tor {
                 mac.init(keySpec)
                 mac.update(cookie)
                 mac.update(clientNonce)
-                mac.update(result["SERVERNONCE"])
+                mac.update(result.serverNonce)
                 controlConnection.authenticate(mac.doFinal())
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -168,7 +168,8 @@ class ExternalTor : Tor {
 
 	
     override fun publishHiddenService(hsDirName: String, hiddenServicePort: Int, localPort: Int): HsContainer {
-        return HsContainer(ctrlCon.createHiddenService(hiddenServicePort), eventHandler)
+        val result = ctrlCon.createHiddenService(hiddenServicePort)
+        return HsContainer(result.serviceID, eventHandler)
     }
 
     override fun unpublishHiddenService(hsDir: String) {
