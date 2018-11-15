@@ -58,25 +58,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.honton.chas</groupId>
-                <artifactId>exists-maven-plugin</artifactId>
-                <version>0.0.6</version>
-                <configuration>
-                    <project>com.cedricwalter:tor-binary-windows:${tor-binary.version}</project>
-                    <artifact>tor-binary-windows-${tor-binary.version}.pom</artifact>
-                    <property>tor-binary-exists</property>
-                    <skip>${force-update-tor-binaries}</skip>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>local</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <version>1.8</version>
                 <dependencies>
