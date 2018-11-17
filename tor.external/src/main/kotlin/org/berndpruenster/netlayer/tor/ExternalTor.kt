@@ -171,8 +171,8 @@ class ExternalTor : Tor {
 	
     override fun publishHiddenService(hsDirName: String, hiddenServicePort: Int, localPort: Int): HsContainer {
 
-        val hostnameFile = File("$hsDirName/hostname")
-        val keyFile = File("$hsDirName/private_key")
+        val hostnameFile = File(hsDirName + File.separator + "hostname")
+        val keyFile = File(hsDirName + File.separator + "private_key")
 
         if(keyFile.exists()) {
             // if the service has already been started once, we reuse the data
