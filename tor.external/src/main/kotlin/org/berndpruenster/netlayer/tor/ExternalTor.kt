@@ -33,6 +33,9 @@ internal const val LOCAL_IP = "127.0.0.1"
 
 class ExternalTor : Tor {
     val EVENTS = listOf("CIRC", "WARN", "ERR")
+
+    private val activeHiddenServices = ArrayList<String>()
+
     private lateinit var ctrlCon: TorController
 
     private abstract class Authenticator {
@@ -208,15 +211,23 @@ class ExternalTor : Tor {
             val result = ctrlCon.createHiddenService(hiddenServicePort)
             hostnameFile.appendText(result.serviceID+".onion")
             keyFile.appendText(result.privateKey)
+
+            // memorize service in case of ungraceful shutdown
+            activeHiddenServices.add(result.serviceID)
             return HsContainer(result.serviceID, eventHandler)
         }
     }
 
     override fun unpublishHiddenService(hsDir: String) {
         ctrlCon.destroyHiddenService(hsDir)
+
+        activeHiddenServices.remove(hsDir)
     }
 	
     override fun shutdown() {
+        // unpublish hidden services
+        activeHiddenServices.forEach { current -> unpublishHiddenService(current) }
+
         // disconnect from controlPort
     }
 }
