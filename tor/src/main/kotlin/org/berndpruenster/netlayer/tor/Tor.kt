@@ -42,7 +42,10 @@ import java.io.File
 import java.io.IOException
 import java.math.BigInteger
 import java.net.Socket
+import java.net.SocketException
 import java.security.MessageDigest
+import java.util.*
+import java.util.concurrent.TimeoutException
 
 /**
  * This class began life as TorPlugin from the Briar Project
@@ -71,11 +74,34 @@ class TorController(private val socket: Socket) : TorControlConnection(socket) {
     val bootstrapped: Boolean
         get() = getInfo(STATUS_BOOTSTRAPPED)?.contains("PROGRESS=100") ?: false
 
-    fun shutdown() {
+    fun shutdown(timeout: Int = 30 * 1000) {
         socket.use {
             logger?.debug("Stopping Tor")
             setConf(DISABLE_NETWORK, "1")
-            shutdownTor("TERM")
+            awaitShutdown(timeout)
+        }
+    }
+
+    private fun awaitShutdown(timeout: Int) {
+        val start = Date().time
+
+        while(!socket.isClosed) {
+            try {
+                // we try to shutdown tor over and over again
+                shutdownTor("TERM")
+            } catch(e: SocketException) {
+                // until we get a Broken pipe
+                if(e.message!!.contains("Broken pipe"))
+                    // then we know that Tor is gone
+                    socket.close()
+            }
+
+            // safeguard against an endless loop
+            if(Date().time - start > timeout)
+                throw TimeoutException("Tor is still running after " + timeout/1000 + " seconds. Giving up.")
+
+            // give tor some time to shut down without stressing the CPU too much
+            Thread.sleep(200)
         }
     }
 
