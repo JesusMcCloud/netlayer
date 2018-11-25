@@ -18,6 +18,7 @@ various open source licenses (www.opensource.org).
 package org.berndpruenster.netlayer.tor
 
 import com.runjva.sourceforge.jsocks.protocol.SocksSocket
+import net.freehaven.tor.control.TorControlConnection
 import java.net.Socket
 import java.net.InetAddress
 import java.net.ServerSocket
@@ -177,12 +178,17 @@ class ExternalTor : Tor {
         val hostnameFile = File(hsDirName + File.separator + "hostname")
         val keyFile = File(hsDirName + File.separator + "private_key")
 
+        val result: TorControlConnection.CreateHiddenServiceResult
+
+        control.enableHiddenServiceEvents()
+
         if(keyFile.exists()) {
             // if the service has already been started once, we reuse the data
-            val result = ctrlCon.createHiddenService(hiddenServicePort, keyFile.readText())
-            return HsContainer(result.serviceID, eventHandler)
+            result = ctrlCon.createHiddenService(hiddenServicePort, keyFile.readText())
         } else {
             // else, we create a fresh service with a fresh key
+            result = ctrlCon.createHiddenService(hiddenServicePort)
+
             // and while we are at it, we persist the hs information for future use
             if (!(hostnameFile.parentFile.exists() || hostnameFile.parentFile.mkdirs())) {
                 throw  TorCtlException("Could not create hostnameFile parent directory")
@@ -208,14 +214,18 @@ class ExternalTor : Tor {
                 logger?.error("could not set permissions, hidden service $hsDirName will most probably not work", e)
             }
 
-            val result = ctrlCon.createHiddenService(hiddenServicePort)
-            hostnameFile.appendText(result.serviceID+".onion")
+            hostnameFile.appendText(result.serviceID + ".onion")
             keyFile.appendText(result.privateKey)
-
-            // memorize service in case of ungraceful shutdown
-            activeHiddenServices.add(result.serviceID)
-            return HsContainer(result.serviceID, eventHandler)
         }
+
+        // memorize service in case of ungraceful shutdown
+        val hostname = result.serviceID+".onion"
+        activeHiddenServices.add(hostname)
+        return HsContainer(hostname, eventHandler)
+    }
+
+    fun getTorCtrlCon():TorController {
+        return ctrlCon;
     }
 
     override fun unpublishHiddenService(hsDir: String) {

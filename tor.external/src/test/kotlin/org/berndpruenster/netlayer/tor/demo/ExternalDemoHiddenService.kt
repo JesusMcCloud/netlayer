@@ -21,17 +21,39 @@ fun main(args: Array<String>) {
     // secure cookie authentication
     //Tor.default = ExternalTor(9151, File("/path/to/tor//control_auth_cookie"), true)
 
-    var server = HiddenServiceSocket(10025)
+    val server = HiddenServiceSocket(10025,"/tmp/hiddenservicetest")
+    server.addReadyListener { socket ->
+        System.err.println("Hidden Service socket is ready")
 
-    // wait for the service to be published
-    Thread.sleep(25000)
+        // create a simple hidden service
+        thread(name = "HiddenService") {
+            System.err.println("HiddenService is about ready")
+            BufferedReader(InputStreamReader(socket.accept().getInputStream())).use {
+                System.err.println("HiddenService received: \"${it.readLine()}\"")
+            }
+        }
 
-    // create simple hidden service service
-    thread { BufferedReader(InputStreamReader(server.accept().getInputStream())).use { println(it.readLine()) } }
+        // talk to the newly created hidden service
+        thread(name="connectToHiddenService") {
+            try {
+                // allow tor a few seconds to broadly publish the service
+                Thread.sleep(25000)
 
-    // talk to the newly created hidden service
-    ExternalTorSocket(9150, server.serviceName + ".onion", 10025).outputStream.write("Hello Tor\n".toByteArray())
+                println("Contacting the hidden service...")
+                val externalSocket = ExternalTorSocket(9150, socket.serviceName, 10025)
+                externalSocket.outputStream.write("Hello Tor\n".toByteArray())
+                println("[Contacting the hidden service...]done")
 
-    System.out.println("done")
+                // wait for the hidden service thread to print to System.out
+                Thread.sleep(2000)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                System.exit(0)
+            }
+        }
+    }
 
+    System.err.println("It will take some time for the HS to be reachable (up to 40 seconds). You will be notified about this")
+    Scanner(System.`in`).nextLine()
 }
