@@ -36,13 +36,12 @@ package org.berndpruenster.netlayer.tor
 
 import net.freehaven.tor.control.EventHandler
 
-/**
- * Logs the data we get from notifications from the Tor OP. This is really just
- * meant for debugging.
- */
 private const val UPLOADED = "UPLOADED"
-private const val HS_DESC = "HS_DESC"
+private const val RECEIVED = "RECEIVED"
 
+/**
+ * Manages and triggers the ready-callbacks
+ */
 class TorEventHandler : EventHandler {
 
 
@@ -90,24 +89,38 @@ class TorEventHandler : EventHandler {
 
     override fun message(severity: String, msg: String) {
         val msg2 = "message: severity: $severity , msg: $msg"
-        logger?.debug(msg2)
+        logger?.trace(msg2)
+    }
+
+    override fun hiddenServiceEvent(type: String, msg: String) {
+        logger?.debug("hiddenService: HS_DESC $msg")
+        when(type) {
+            UPLOADED -> {
+                val hiddenServiceID = "${msg.split(" ")[1]}.onion"
+                synchronized(socketMap) {
+                    val hs = socketMap.get(hiddenServiceID) ?: return
+                    logger?.info("Hidden Service $hs is ready")
+                    listenerMap.get(hiddenServiceID)?.forEach {
+                        it(hs)
+                    }
+                    socketMap.remove(hiddenServiceID)
+                    listenerMap.remove(hiddenServiceID)
+                }
+            }
+        }
+    }
+
+    override fun hiddenServiceFailedEvent(reason: String, msg: String) {
+        logger?.debug("hiddenService: HS_DESC $msg")
+    }
+
+    override fun hiddenServiceDescriptor(descriptorId: String, descriptor: String, msg: String) {
+        logger?.debug("hiddenService: HS_DESC_CONTENT $descriptorId $descriptor, as in $msg")
     }
 
     override fun unrecognized(type: String, msg: String) {
         val msg2 = "unrecognized: current: $type , $msg: msg"
         logger?.debug(msg2)
-        if (type == (HS_DESC) && msg.startsWith(UPLOADED)) {
-            val hiddenServiceID = "${msg.split(" ")[1]}.onion"
-            synchronized(socketMap) {
-                val hs = socketMap.get(hiddenServiceID) ?: return
-                logger?.info("Hidden Service $hs is ready")
-                listenerMap.get(hiddenServiceID)?.forEach {
-                    it(hs)
-                }
-                socketMap.remove(hiddenServiceID)
-                listenerMap.remove(hiddenServiceID)
-            }
-        }
     }
 
 }
