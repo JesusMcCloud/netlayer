@@ -1,5 +1,6 @@
 before_install:
 - ls -ahl
 - git tag
+- git log -n 20 --graph --full-history --all --pretty=tformat:'%x1b[31m%h%x09%x1b[32m%d%x1b[0m%x20%s%x20%x1b[33m(%an %ar)%x1b[0m'
 install:
 - echo "skip install"
