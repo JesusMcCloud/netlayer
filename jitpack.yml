@@ -1,0 +1,4 @@
+before_install:
+- ls -ahl
+install:
+- echo "skip install"
