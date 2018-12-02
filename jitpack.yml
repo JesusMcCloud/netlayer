@@ -1,4 +1,5 @@
 before_install:
 - ls -ahl
+- git tag
 install:
 - echo "skip install"
