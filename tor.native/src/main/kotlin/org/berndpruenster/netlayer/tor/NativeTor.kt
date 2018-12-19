@@ -60,7 +60,7 @@ private const val HS_DIR = "HiddenServiceDir"
 
 private const val HOSTNAME_TIMEOUT = 30 * 1000                                       // Milliseconds
 
-class NativeTor @JvmOverloads @Throws(TorCtlException::class) constructor(workingDirectory: File, bridgeLines: Collection<String>? = null, torrcOverrides: Torrc? = null) : Tor() {
+class NativeTor @JvmOverloads @Throws(TorCtlException::class) constructor(workingDirectory: File, bridgeLines: Collection<String>? = null, torrcOverrides: Torrc? = null, automaticShutdown : Boolean = true) : Tor() {
 	
 	private val context : NativeContext = NativeContext(workingDirectory, torrcOverrides)
 
@@ -80,7 +80,8 @@ class NativeTor @JvmOverloads @Throws(TorCtlException::class) constructor(workin
                         Thread.sleep(1000, 0)
                     } else {
                         control = Control(torController)
-                        Runtime.getRuntime().addShutdownHook(Thread({ control.shutdown() }))
+                        if(automaticShutdown)
+                            Runtime.getRuntime().addShutdownHook(Thread({ control.shutdown() }))
                         done = true
                         break@loop
                     }
