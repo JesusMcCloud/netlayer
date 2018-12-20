@@ -42,6 +42,8 @@ import net.freehaven.tor.control.TorControlConnection
 import java.io.*
 import java.math.BigInteger
 import java.net.Socket
+import java.nio.file.Files
+import java.nio.file.attribute.PosixFilePermission
 import java.security.MessageDigest
 
 /**
@@ -123,8 +125,6 @@ class Control(private val con: TorController) {
     companion object {
         @JvmStatic
         private val EVENTS_HS = listOf("CIRC", "ORCONN", "INFO", "NOTICE", "WARN", "ERR", "HS_DESC", "HS_DESC_CONTENT")
-
-        private const val HS_OPTS = "HiddenServiceOptions"
     }
 
     internal val proxyPort = parsePort()
@@ -152,14 +152,8 @@ class Control(private val con: TorController) {
         throw IOException("No IPv4 localhost binding available!")
     }
 
-    val hiddenServices: List<ConfigEntry> get() = con.getConf(HS_OPTS)
     fun enableHiddenServiceEvents() {
         con.setEvents(EVENTS_HS)
-    }
-
-    fun saveConfig(config: List<String>) {
-        con.setConf(config)
-        con.saveConf()
     }
 
     fun hsAvailable(onionUrl: String): Boolean = con.isHSAvailable(onionUrl.substring(0, onionUrl.indexOf(".")))
@@ -177,6 +171,9 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor() {
 
     protected val eventHandler: TorEventHandler = TorEventHandler()
     lateinit var control: Control
+
+    protected lateinit var torController: TorController
+    protected val activeHiddenServices = ArrayList<String>()
 
     companion object {
 
@@ -230,6 +227,7 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor() {
     @JvmOverloads
     fun getProxy(streamID: String? = null): Socks5Proxy = Tor.getProxy(control.proxyPort, streamID)
 
+    abstract fun preprocessHsDirName(hsDirName: String) : File
 
     /**
      * Publishes a hidden service
@@ -244,10 +242,63 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor() {
      * @throws TorCtlException
      */
     @Throws(IOException::class, TorCtlException::class)
-    abstract fun publishHiddenService(hsDirName: String, hiddenServicePort: Int, localPort: Int): HsContainer
+    fun publishHiddenService(hsDirName: String, hiddenServicePort: Int, localPort: Int): HsContainer {
+
+        val hostnameFile = File(preprocessHsDirName(hsDirName), "hostname")
+        val keyFile = File(preprocessHsDirName(hsDirName), "private_key")
+
+        val result: TorControlConnection.CreateHiddenServiceResult
+
+        control.enableHiddenServiceEvents()
+
+        if(keyFile.exists()) {
+            // if the service has already been started once, we reuse the data
+            result = torController.createHiddenService(hiddenServicePort, keyFile.readText())
+        } else {
+            // else, we create a fresh service with a fresh key
+            result = torController.createHiddenService(hiddenServicePort)
+
+            // and while we are at it, we persist the hs information for future use
+            if (!(hostnameFile.parentFile.exists() || hostnameFile.parentFile.mkdirs())) {
+                throw  TorCtlException("Could not create hostnameFile parent directory")
+            }
+
+            if (!(hostnameFile.exists() || hostnameFile.createNewFile())) {
+                throw  TorCtlException("Could not create hostnameFile")
+            }
+
+            if (!(keyFile.exists() || keyFile.createNewFile())) {
+                throw  TorCtlException("Could not create keyFile")
+            }
+
+            // Thanks, Ubuntu!
+            try {
+                if (OsType.current.isUnixoid()) {
+                    val perms = mutableSetOf(PosixFilePermission.OWNER_READ,
+                            PosixFilePermission.OWNER_WRITE,
+                            PosixFilePermission.OWNER_EXECUTE)
+                    Files.setPosixFilePermissions(hostnameFile.parentFile.toPath(), perms)
+                }
+            } catch (e: Exception) {
+                logger?.error("could not set permissions, hidden service $hsDirName will most probably not work", e)
+            }
+
+            hostnameFile.appendText(result.serviceID + ".onion")
+            keyFile.appendText(result.privateKey)
+        }
+
+        // memorize service in case of ungraceful shutdown
+        val hostname = result.serviceID+".onion"
+        activeHiddenServices.add(hostname)
+        return HsContainer(hostname, eventHandler)
+    }
 
     @Throws(TorCtlException::class, IOException::class)
-    abstract fun unpublishHiddenService(hsDir: String)
+    fun unpublishHiddenService(serviceName: String) {
+        torController.destroyHiddenService(serviceName.replace(Regex("\\.onion$"), ""))
+
+        activeHiddenServices.remove(serviceName)
+    }
 
     fun isHiddenServiceAvailable(onionUrl: String): Boolean = control.hsAvailable(onionUrl)
 

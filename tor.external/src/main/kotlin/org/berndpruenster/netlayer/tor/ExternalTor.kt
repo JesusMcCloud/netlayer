@@ -18,7 +18,6 @@ various open source licenses (www.opensource.org).
 package org.berndpruenster.netlayer.tor
 
 import com.runjva.sourceforge.jsocks.protocol.SocksSocket
-import net.freehaven.tor.control.TorControlConnection
 import java.net.Socket
 import java.net.InetAddress
 import java.net.ServerSocket
@@ -27,15 +26,9 @@ import java.io.File
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import kotlin.random.Random
-import java.nio.file.Files
-import java.nio.file.attribute.PosixFilePermission
 
 class ExternalTor : Tor {
     val EVENTS = listOf("CIRC", "WARN", "ERR")
-
-    private val activeHiddenServices = ArrayList<String>()
-
-    private lateinit var ctrlCon: TorController
 
     private abstract class Authenticator {
         abstract fun authenticate(controlConnection: TorController)
@@ -159,75 +152,21 @@ class ExternalTor : Tor {
         val sock = Socket(LOCAL_IP, controlPort)
 
         // Open a control connection and authenticate using the cookie file
-        ctrlCon = TorController(sock)
+        torController = TorController(sock)
 
         // authenticate
-        authenticator.authenticate(ctrlCon)
+        authenticator.authenticate(torController)
 
-        ctrlCon.setEventHandler(eventHandler)
-        ctrlCon.setEvents(EVENTS)
+        torController.setEventHandler(eventHandler)
+        torController.setEvents(EVENTS)
 
-        control = Control(ctrlCon)
+        control = Control(torController)
     }
 
-	
-    override fun publishHiddenService(hsDirName: String, hiddenServicePort: Int, localPort: Int): HsContainer {
-
-        val hostnameFile = File(hsDirName + File.separator + "hostname")
-        val keyFile = File(hsDirName + File.separator + "private_key")
-
-        val result: TorControlConnection.CreateHiddenServiceResult
-
-        control.enableHiddenServiceEvents()
-
-        if(keyFile.exists()) {
-            // if the service has already been started once, we reuse the data
-            result = ctrlCon.createHiddenService(hiddenServicePort, keyFile.readText())
-        } else {
-            // else, we create a fresh service with a fresh key
-            result = ctrlCon.createHiddenService(hiddenServicePort)
-
-            // and while we are at it, we persist the hs information for future use
-            if (!(hostnameFile.parentFile.exists() || hostnameFile.parentFile.mkdirs())) {
-                throw  TorCtlException("Could not create hostnameFile parent directory")
-            }
-
-            if (!(hostnameFile.exists() || hostnameFile.createNewFile())) {
-                throw  TorCtlException("Could not create hostnameFile")
-            }
-
-            if (!(keyFile.exists() || keyFile.createNewFile())) {
-                throw  TorCtlException("Could not create keyFile")
-            }
-
-            // Thanks, Ubuntu!
-            try {
-                if (OsType.current.isUnixoid()) {
-                    val perms = mutableSetOf(PosixFilePermission.OWNER_READ,
-                            PosixFilePermission.OWNER_WRITE,
-                            PosixFilePermission.OWNER_EXECUTE)
-                    Files.setPosixFilePermissions(hostnameFile.parentFile.toPath(), perms)
-                }
-            } catch (e: Exception) {
-                logger?.error("could not set permissions, hidden service $hsDirName will most probably not work", e)
-            }
-
-            hostnameFile.appendText(result.serviceID + ".onion")
-            keyFile.appendText(result.privateKey)
-        }
-
-        // memorize service in case of ungraceful shutdown
-        val hostname = result.serviceID+".onion"
-        activeHiddenServices.add(hostname)
-        return HsContainer(hostname, eventHandler)
+    override fun preprocessHsDirName(hsDirName: String): File {
+        return File(hsDirName)
     }
 
-    override fun unpublishHiddenService(hsDir: String) {
-        ctrlCon.destroyHiddenService(hsDir)
-
-        activeHiddenServices.remove(hsDir)
-    }
-	
     override fun shutdown() {
         // unpublish hidden services
         activeHiddenServices.forEach { current -> unpublishHiddenService(current) }

@@ -206,7 +206,7 @@ class HiddenServiceSocket @JvmOverloads constructor(internalPort: Int,
     override fun close() {
         super.close()
         try {
-            mgr.unpublishHiddenService(hiddenServiceDir)
+            mgr.unpublishHiddenService(serviceName)
         } catch (e: TorCtlException) {
             throw  IOException(e)
         }
