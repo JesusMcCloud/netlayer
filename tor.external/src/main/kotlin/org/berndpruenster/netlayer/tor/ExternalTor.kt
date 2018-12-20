@@ -30,8 +30,6 @@ import kotlin.random.Random
 import java.nio.file.Files
 import java.nio.file.attribute.PosixFilePermission
 
-internal const val LOCAL_IP = "127.0.0.1"
-
 class ExternalTor : Tor {
     val EVENTS = listOf("CIRC", "WARN", "ERR")
 
@@ -222,10 +220,6 @@ class ExternalTor : Tor {
         val hostname = result.serviceID+".onion"
         activeHiddenServices.add(hostname)
         return HsContainer(hostname, eventHandler)
-    }
-
-    fun getTorCtrlCon():TorController {
-        return ctrlCon;
     }
 
     override fun unpublishHiddenService(hsDir: String) {
