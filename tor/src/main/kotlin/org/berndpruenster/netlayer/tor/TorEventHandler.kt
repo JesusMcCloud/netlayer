@@ -35,6 +35,7 @@ various open source licenses (www.opensource.org).
 package org.berndpruenster.netlayer.tor
 
 import net.freehaven.tor.control.EventHandler
+import kotlin.concurrent.thread
 
 private const val UPLOADED = "UPLOADED"
 private const val RECEIVED = "RECEIVED"
@@ -101,7 +102,7 @@ class TorEventHandler : EventHandler {
                     val hs = socketMap.get(hiddenServiceID) ?: return
                     logger?.info("Hidden Service $hs is ready")
                     listenerMap.get(hiddenServiceID)?.forEach {
-                        it(hs)
+                        thread{it(hs)}
                     }
                     socketMap.remove(hiddenServiceID)
                     listenerMap.remove(hiddenServiceID)
