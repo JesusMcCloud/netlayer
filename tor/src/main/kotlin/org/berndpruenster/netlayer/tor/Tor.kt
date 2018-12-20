@@ -35,11 +35,11 @@ various open source licenses (www.opensource.org).
 package org.berndpruenster.netlayer.tor
 
 import com.runjva.sourceforge.jsocks.protocol.Socks5Proxy
+import mu.KLogger
 import mu.KotlinLogging
 import net.freehaven.tor.control.ConfigEntry
 import net.freehaven.tor.control.TorControlConnection
-import java.io.File
-import java.io.IOException
+import java.io.*
 import java.math.BigInteger
 import java.net.Socket
 import java.security.MessageDigest
@@ -65,11 +65,44 @@ val logger = try {
 
 class TorCtlException(message: String? = null, cause: Throwable? = null) : Throwable(message, cause)
 
+class TraceStream : PrintWriter {
+    class Stream : OutputStream {
+        private val logger : KLogger
 
-class TorController(private val socket: Socket) : TorControlConnection(socket) {
+        constructor(logger: KLogger) {
+            this.logger = logger
+        }
+
+        override fun write(p0: Int) {
+        }
+
+        override fun write(cbuf: ByteArray, off: Int, len: Int) {
+            synchronized(logger) {
+                var message = String(cbuf.copyOfRange(off, off + len))
+                message.filterNot { it -> it == '\r' }
+                message.split(Regex("\\n", RegexOption.MULTILINE)).forEach {
+                    if(it.isNotEmpty()) logger.trace(it)
+                }
+            }
+        }
+    }
+
+    constructor(logger : KLogger) : super(Stream(logger))
+}
+
+class TorController : TorControlConnection {
 
     val bootstrapped: Boolean
         get() = getInfo(STATUS_BOOTSTRAPPED)?.contains("PROGRESS=100") ?: false
+
+    private val socket: Socket
+
+    constructor(socket: Socket) : super(socket) {
+        this.socket = socket
+
+        if(null != logger)
+            super.setDebugging(TraceStream(logger))
+    }
 
     fun shutdown() {
         socket.use {
