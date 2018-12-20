@@ -122,7 +122,7 @@ class Control(private val con: TorController) {
 
     companion object {
         @JvmStatic
-        private val EVENTS_HS = listOf("EXTENDED", "CIRC", "ORCONN", "INFO", "NOTICE", "WARN", "ERR", "HS_DESC", "HS_DESC_CONTENT")
+        private val EVENTS_HS = listOf("CIRC", "ORCONN", "INFO", "NOTICE", "WARN", "ERR", "HS_DESC", "HS_DESC_CONTENT")
 
         private const val HS_OPTS = "HiddenServiceOptions"
     }
