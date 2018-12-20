@@ -65,7 +65,7 @@ val logger = try {
 
 class TorCtlException(message: String? = null, cause: Throwable? = null) : Throwable(message, cause)
 
-class TraceStream : PrintWriter {
+class TraceStream(logger : KLogger) : PrintWriter(Stream(logger), true) {
     class Stream : OutputStream {
         private val logger : KLogger
 
@@ -83,11 +83,11 @@ class TraceStream : PrintWriter {
                 message.split(Regex("\\n", RegexOption.MULTILINE)).forEach {
                     if(it.isNotEmpty()) logger.trace(it)
                 }
+                flush()
             }
         }
     }
 
-    constructor(logger : KLogger) : super(Stream(logger))
 }
 
 class TorController : TorControlConnection {
