@@ -168,10 +168,13 @@ class ExternalTor : Tor {
     }
 
     override fun shutdown() {
-        // unpublish hidden services
-        activeHiddenServices.forEach { current -> unpublishHiddenService(current) }
+        synchronized(control) {
+            // unpublish hidden services
+            while(activeHiddenServices.isNotEmpty())
+                unpublishHiddenService(activeHiddenServices[0])
 
-        // disconnect from controlPort
+            // disconnect from controlPort
+        }
     }
 }
 

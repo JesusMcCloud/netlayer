@@ -119,12 +119,16 @@ class NativeTor @JvmOverloads @Throws(TorCtlException::class) constructor(workin
     }
 
     override fun shutdown() {
-        // unpublish hidden services
-        activeHiddenServices.forEach { current -> unpublishHiddenService(current) }
-
         synchronized(control) {
-            control.shutdown()
+            try {
+                // unpublish hidden services
+                while(activeHiddenServices.isNotEmpty())
+                    unpublishHiddenService(activeHiddenServices[0])
+            } finally {
+                control.shutdown()
+            }
         }
+
     }
 }
 
