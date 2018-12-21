@@ -26,7 +26,7 @@ As of you, simply add `tor.native` as dependency to your project (using JitPack)
       <dependency>
           <groupId>com.github.JesusMcCloud.netlayer</groupId>
           <artifactId>tor.native</artifactId>
-          <version>0.4.8</version>
+          <version>${netlayer.version}</version>
       </dependency>
 ```
 
