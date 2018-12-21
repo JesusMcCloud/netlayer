@@ -79,6 +79,7 @@ class TraceStream(logger : KLogger) : PrintWriter(Stream(logger), true) {
         }
 
         override fun write(cbuf: ByteArray, off: Int, len: Int) {
+            if(!logger.isTraceEnabled) return
             synchronized(logger) {
                 var message = String(cbuf.copyOfRange(off, off + len))
                 message.filterNot { it -> it == '\r' }
