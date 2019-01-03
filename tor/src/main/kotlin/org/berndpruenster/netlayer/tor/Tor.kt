@@ -254,10 +254,10 @@ abstract class Tor @Throws(TorCtlException::class) protected constructor() {
 
         if(keyFile.exists()) {
             // if the service has already been started once, we reuse the data
-            result = torController.createHiddenService(hiddenServicePort, keyFile.readText())
+            result = torController.createHiddenService(hiddenServicePort, localPort, keyFile.readText())
         } else {
             // else, we create a fresh service with a fresh key
-            result = torController.createHiddenService(hiddenServicePort)
+            result = torController.createHiddenService(hiddenServicePort, localPort)
 
             // and while we are at it, we persist the hs information for future use
             if (!(hostnameFile.parentFile.exists() || hostnameFile.parentFile.mkdirs())) {
