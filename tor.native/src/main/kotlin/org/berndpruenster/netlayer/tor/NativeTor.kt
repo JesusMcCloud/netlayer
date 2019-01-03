@@ -58,18 +58,20 @@ class NativeTor @JvmOverloads @Throws(TorCtlException::class) constructor(workin
 
     private val bridgeConfig: List<String> = bridgeLines?.filter { it.length > 10 } ?: emptyList()
 
+    private lateinit var myTorController : TorController
     init {
         try {
             var done = false
             loop@ for (retryCount in 1..TRIES_PER_STARTUP) {
-                torController = context.installAndStartTorOp(bridgeConfig, eventHandler)
-                torController.enableNetwork()
+                myTorController = context.installAndStartTorOp(bridgeConfig, eventHandler)
+                myTorController.enableNetwork()
                 // We will check every second to see if boot strapping has
                 // finally finished
                 for (secondsWaited in 1..TOTAL_SEC_PER_STARTUP) {
-                    if (!torController.bootstrapped) {
+                    if (!myTorController.bootstrapped) {
                         Thread.sleep(1000, 0)
                     } else {
+                        torController = myTorController
                         control = Control(torController)
                         if(automaticShutdown)
                             Runtime.getRuntime().addShutdownHook(Thread({ control.shutdown() }))
@@ -77,10 +79,10 @@ class NativeTor @JvmOverloads @Throws(TorCtlException::class) constructor(workin
                         break@loop
                     }
                 }
-                if(null == control) {
+                if(::myTorController.isInitialized && !done) {
 
                     // Bootstrapping isn't over so we need to restart and try again
-                    torController.shutdown()
+                    myTorController.shutdown()
 
                     // Experimentally we have found that if a Tor OP has run before and thus
                     // has cached descriptors
@@ -103,10 +105,10 @@ class NativeTor @JvmOverloads @Throws(TorCtlException::class) constructor(workin
         } finally {
             // Make sure we return the Tor OP in some kind of consistent state,
             // even if it's 'off'.
-            if (!torController?.bootstrapped) {
+            if (::myTorController.isInitialized && !myTorController.bootstrapped) {
                 try {
                     context.deleteAllFilesButHS()
-                    torController?.shutdown()
+                    myTorController.shutdown()
                 } catch (e: Exception) {
                     logger?.error { e.localizedMessage }
                 }
