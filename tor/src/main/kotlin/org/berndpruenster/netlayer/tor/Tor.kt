@@ -162,7 +162,7 @@ class Control(private val con: TorController) {
 
 }
 
-data class HsContainer(internal val hostname: String, internal val handler: TorEventHandler)
+data class HsContainer(val hostname: String, val handler: TorEventHandler)
 
 
 abstract class Tor @Throws(TorCtlException::class) protected constructor() {

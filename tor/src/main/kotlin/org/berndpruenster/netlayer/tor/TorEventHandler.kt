@@ -45,15 +45,25 @@ private const val RECEIVED = "RECEIVED"
  */
 class TorEventHandler : EventHandler {
 
+    private val listenerMap = HashMap<String, () -> Unit>()
 
-    private val socketMap = HashMap<String, HiddenServiceSocket>()
-    private val listenerMap = HashMap<String, List<(socket: HiddenServiceSocket) -> Unit>>()
-
+    class HiddenServiceSocketList(private val hs: HiddenServiceSocket, private val listeners: List<(socket: HiddenServiceSocket) -> Unit>) : () -> Unit {
+        override fun invoke() {
+            listeners?.forEach {
+                thread{it(hs)}
+            }
+        }
+    }
 
     fun attachReadyListeners(hs: HiddenServiceSocket, listeners: List<(socket: HiddenServiceSocket) -> Unit>) {
-        synchronized(socketMap) {
-            socketMap.put(hs.socketAddress.serviceName, hs)
-            listenerMap.put(hs.socketAddress.serviceName, listeners)
+        synchronized(listenerMap) {
+            listenerMap.put(hs.socketAddress.serviceName, HiddenServiceSocketList(hs, listeners))
+        }
+    }
+
+    fun attachHSReadyListener(serviceName: String, listener: () -> Unit) {
+        synchronized(listenerMap) {
+            listenerMap.put(serviceName, listener)
         }
     }
 
@@ -98,13 +108,9 @@ class TorEventHandler : EventHandler {
         when(type) {
             UPLOADED -> {
                 val hiddenServiceID = "${msg.split(" ")[1]}.onion"
-                synchronized(socketMap) {
-                    val hs = socketMap.get(hiddenServiceID) ?: return
-                    logger?.info("Hidden Service $hs is ready")
-                    listenerMap.get(hiddenServiceID)?.forEach {
-                        thread{it(hs)}
-                    }
-                    socketMap.remove(hiddenServiceID)
+                synchronized(listenerMap) {
+                    logger?.info("Hidden Service $hiddenServiceID.onion is ready")
+                    listenerMap[hiddenServiceID]?.run {thread(block = this)}
                     listenerMap.remove(hiddenServiceID)
                 }
             }
