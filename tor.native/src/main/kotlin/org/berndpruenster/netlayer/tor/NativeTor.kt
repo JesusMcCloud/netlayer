@@ -102,6 +102,8 @@ class NativeTor @JvmOverloads @Throws(TorCtlException::class) constructor(workin
                 throw TorCtlException("Could not setup Tor")
 
 
+        } catch (e: IOException) {
+            throw TorCtlException("Could not setup Tor", e)
         } finally {
             // Make sure we return the Tor OP in some kind of consistent state,
             // even if it's 'off'.

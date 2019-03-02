@@ -39,6 +39,7 @@ import java.net.Socket
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
+import java.io.BufferedReader
 
 /**
  * This class encapsulates data that is handled differently in Java and ANDROID
@@ -176,8 +177,25 @@ abstract class TorContext @Throws(IOException::class) protected constructor(val 
         // binary (which we currently
         // do by default, something we hope to fix with
         // https://github.com/thaliproject/Tor_Onion_Proxy_Library/issues/13
-        Thread.sleep(1000, 0)
+        for(i in 0..3) {
+            Thread.sleep(1000 * (i.toLong() + 1), 0)
 
+            // getRuntime: Returns the runtime object associated with the current Java application.
+            // exec: Executes the specified string command in a separate process.
+            val p = Runtime.getRuntime().exec(if (OsType.current.isUnixoid()) "ps -few" else (System.getenv("windir") + "\\system32\\" + "tasklist.exe /fo csv /nh"))
+            val allText = p.inputStream.bufferedReader().use(BufferedReader::readText)
+            if (!allText.contains(torExecutableFile.absolutePath))
+                break
+
+            if(2 == i && !OsType.current.isUnixoid())
+                Runtime.getRuntime().exec("TASKKILL /F /IM " + torExecutableFile.absolutePath)
+
+            if(3 == i)
+                throw IOException("Our tor binary is still in use... giving up")
+        }
+
+        // we have to wait until Java9 for this:
+        // ProcessHandle.allProcesses()
         workingDirectory.listFiles()?.forEach {
             if (it.absolutePath.startsWith(torrcFile.absolutePath)) {
                 it.delete()
