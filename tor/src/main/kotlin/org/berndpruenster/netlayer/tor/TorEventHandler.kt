@@ -49,7 +49,7 @@ class TorEventHandler : EventHandler {
 
     class HiddenServiceSocketList(private val hs: HiddenServiceSocket, private val listeners: List<(socket: HiddenServiceSocket) -> Unit>) : () -> Unit {
         override fun invoke() {
-            listeners?.forEach {
+            listeners.forEach {
                 thread{it(hs)}
             }
         }
