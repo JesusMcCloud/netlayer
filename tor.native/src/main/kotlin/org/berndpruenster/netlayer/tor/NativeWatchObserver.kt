@@ -35,103 +35,36 @@ various open source licenses (www.opensource.org).
 package org.berndpruenster.netlayer.tor
 
 import java.io.File
-import java.nio.file.*
+import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 
 /**
  * Watches to see if a particular file is changed
  */
 class NativeWatchObserver(private val fileToWatch: File) : WriteObserver {
-    private val watchService: WatchService
-    private val key: WatchKey
-    private val lastModified: Long
-    private val length: Long
+    private var lastDigest: ByteArray
+
+    private var messageDigestCreator: MessageDigest
 
     init {
         if (!fileToWatch.exists()) {
             throw  RuntimeException("$fileToWatch does not exist")
         }
 
-        lastModified = fileToWatch.lastModified()
-        length = fileToWatch.length()
-
-        watchService = FileSystems.getDefault().newWatchService()
-        // Note that poll depends on us only registering events that are of current
-        // path
-        if (OsType.current != OsType.MACOS) {
-            key = fileToWatch.parentFile.toPath().register(watchService,
-                                                           StandardWatchEventKinds.ENTRY_CREATE,
-                                                           StandardWatchEventKinds.ENTRY_DELETE,
-                                                           StandardWatchEventKinds.ENTRY_MODIFY)
-        } else {
-            // Unfortunately the default watch service on MACOS is broken, it uses a
-            // separate thread and really slow polling to detect file changes
-            // rather than integrating with the OS. There is a hack to make it poll
-            // faster which we can use for now. See
-            // http://stackoverflow.com/questions/9588737/is-java-7-watchservice-slow-for-anyone-else
-            key = fileToWatch.parentFile.toPath().register(watchService,
-                                                           arrayOf(StandardWatchEventKinds.ENTRY_CREATE,
-                                                                   StandardWatchEventKinds.ENTRY_DELETE,
-                                                                   StandardWatchEventKinds.ENTRY_MODIFY))
-        }
+        messageDigestCreator = MessageDigest.getInstance("SHA-256")
+        lastDigest = messageDigestCreator.digest(fileToWatch.readBytes())
     }
 
     override fun poll(timeout: Long, unit: TimeUnit): Boolean {
         var result = false
-        try {
-            var remainingTimeoutInNanos = unit.toNanos(timeout)
-            while (remainingTimeoutInNanos > 0) {
-                val startTimeInNanos = System.nanoTime()
-                val receivedKey = watchService.poll(remainingTimeoutInNanos, TimeUnit.NANOSECONDS)
-                val timeWaitedInNanos = System.nanoTime() - startTimeInNanos
+        var remaining = unit.toMillis(timeout)
+        while (remaining > 0 && !result) {
+            Thread.sleep(250)
+            result = !lastDigest.contentEquals(messageDigestCreator.digest(fileToWatch.readBytes()))
 
-                if (receivedKey != null) {
-                    if (receivedKey != key) {
-                        throw  RuntimeException("This really shouldn't have happened. EEK!" + receivedKey.toString())
-                    }
-
-                    for (event in receivedKey.pollEvents()) {
-                        val kind = event.kind()
-
-                        if (kind == StandardWatchEventKinds.OVERFLOW) {
-                            logger?.error("We got an overflow, there shouldn't have been enough activity to make that happen.")
-                        }
-
-                        val changedEntry = event.context() as Path
-                        if (fileToWatch.toPath().endsWith(changedEntry)) {
-                            result = true
-                            return result
-                        }
-                    }
-
-                    // In case we haven't yet gotten the event we are looking for we have
-                    // to reset in order to
-                    // receive any further notifications.
-                    if (!key.reset()) {
-                        logger?.error("The key became invalid which should not have happened.")
-                    }
-                }
-
-                if (timeWaitedInNanos >= remainingTimeoutInNanos) {
-                    break
-                }
-
-                remainingTimeoutInNanos -= timeWaitedInNanos
-            }
-
-            // Even with the high sensitivity setting above for the MACOS the polling
-            // still misses changes so I've added
-            // a last modified check as a backup. Except I personally witnessed last
-            // modified not returning a new value
-            // value even when I saw the file change!!!! So I'm also adding in a
-            // length check. Java really seems to
-            // have an issue with the OS/X file system.
-            result = (fileToWatch.lastModified() != lastModified) || (fileToWatch.length() != length)
-            return result
-        } finally {
-            if (result) {
-                watchService.close()
-            }
+            remaining -= 250
         }
+
+        return result
     }
 }
