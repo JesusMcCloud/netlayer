@@ -5,7 +5,7 @@
 
     <groupId>org.berndpruenster.netlayer</groupId>
     <artifactId>parent</artifactId>
-    <version>0.6.4b2</version>
+    <version>0.6.4</version>
     <packaging>pom</packaging>
 
     <name>Netlayer</name>
