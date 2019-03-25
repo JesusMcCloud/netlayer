@@ -60,7 +60,7 @@ private const val DIRECTIVE_DATA_DIRECTORY = "DataDirectory "
 private const val DIRECTIVE_COOKIE_AUTH_FILE = "CookieAuthFile "
 
 private const val OWNER = "__OwningControllerProcess"
-private const val COOKIE_TIMEOUT = 3 * 1000                                        // Milliseconds
+private const val COOKIE_TIMEOUT = 10 * 1000                                        // Milliseconds
 
 
 
