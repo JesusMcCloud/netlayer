@@ -44,6 +44,8 @@ private const val BINARY_TOR_LNX = "tor"
 private const val PATH_LNX = "linux/"
 private const val PATH_LNX64 = "${PATH_LNX}x64/"
 private const val PATH_LNX32 = "${PATH_LNX}x86/"
+private const val PATH_LNXARMHF = "${PATH_LNX}armhf/"
+private const val PATH_LNXARM64 = "${PATH_LNX}arm64/"
 private const val PATH_MACOS = "osx/"
 private const val PATH_MACOS64 = "${PATH_MACOS}x64/"
 private const val PATH_WIN = "windows/"
@@ -53,7 +55,7 @@ private const val PATH_NATIVE = "native/"
 private const val OS_UNSUPPORTED = "We don't support Tor on this OS"
 
 class NativeTor @JvmOverloads @Throws(TorCtlException::class) constructor(workingDirectory: File, bridgeLines: Collection<String>? = null, torrcOverrides: Torrc? = null, automaticShutdown : Boolean = true) : Tor() {
-	
+
 	private val context : NativeContext = NativeContext(workingDirectory, torrcOverrides)
 
     private val bridgeConfig: List<String> = bridgeLines?.filter { it.length > 10 } ?: emptyList()
@@ -151,6 +153,8 @@ class NativeContext(workingDirectory: File, overrides: Torrc?) : TorContext(work
             OsType.MACOS -> PATH_NATIVE + PATH_MACOS64
             OsType.LNX32 -> PATH_NATIVE + PATH_LNX32
             OsType.LNX64 -> PATH_NATIVE + PATH_LNX64
+            OsType.LNXARMHF -> PATH_NATIVE + PATH_LNXARMHF
+            OsType.LNXARM64 -> PATH_NATIVE + PATH_LNXARM64
             else -> throw  RuntimeException(OS_UNSUPPORTED)
         }
     }
@@ -159,7 +163,7 @@ class NativeContext(workingDirectory: File, overrides: Torrc?) : TorContext(work
         when (OsType.current) {
             OsType.WIN -> PATH_NATIVE + PATH_WIN
             OsType.MACOS -> PATH_NATIVE + PATH_MACOS
-            OsType.LNX32, OsType.LNX64 -> PATH_NATIVE + PATH_LNX
+            OsType.LNX32, OsType.LNX64, OsType.LNXARMHF, OsType.LNXARM64 -> PATH_NATIVE + PATH_LNX
             else -> throw  RuntimeException(OS_UNSUPPORTED)
         }
     }
@@ -167,7 +171,7 @@ class NativeContext(workingDirectory: File, overrides: Torrc?) : TorContext(work
 
     override val torExecutableFileName: String by lazy {
         when (OsType.current) {
-            OsType.LNX32, OsType.LNX64 -> BINARY_TOR_LNX
+            OsType.LNX32, OsType.LNX64, OsType.LNXARMHF, OsType.LNXARM64 -> BINARY_TOR_LNX
             OsType.WIN -> BINARY_TOR_WIN
             OsType.MACOS -> BINARY_TOR_MACOS
             else -> throw  RuntimeException(OS_UNSUPPORTED)
@@ -182,7 +186,7 @@ class NativeContext(workingDirectory: File, overrides: Torrc?) : TorContext(work
     override fun installFiles() {
         super.installFiles()
         when (OsType.current) {
-            OsType.WIN, OsType.LNX32, OsType.LNX64, OsType.MACOS -> extractContentFromArchive(workingDirectory,
+            OsType.WIN, OsType.LNX32, OsType.LNX64, OsType.LNXARMHF, OsType.LNXARM64, OsType.MACOS -> extractContentFromArchive(workingDirectory,
                     getByName(
                             pathToTorExecutable + FILE_ARCHIVE))
             else -> throw RuntimeException(OS_UNSUPPORTED)

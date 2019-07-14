@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.berndpruenster.netlayer</groupId>
         <artifactId>parent</artifactId>
-        <version>0.6.5.2</version>
+        <version>0.6.6</version>
     </parent>
 
     <artifactId>tor.native</artifactId>
@@ -32,6 +32,16 @@
         <dependency>
             <groupId>com.github.JesusMcCloud.tor-binary</groupId>
             <artifactId>tor-binary-linux64</artifactId>
+            <version>${tor-binary.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.JesusMcCloud.tor-binary</groupId>
+            <artifactId>tor-binary-linux-armhf</artifactId>
+            <version>${tor-binary.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.JesusMcCloud.tor-binary</groupId>
+            <artifactId>tor-binary-linux-arm64</artifactId>
             <version>${tor-binary.version}</version>
         </dependency>
         <dependency>

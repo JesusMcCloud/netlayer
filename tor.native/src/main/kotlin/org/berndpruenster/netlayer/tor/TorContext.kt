@@ -238,7 +238,7 @@ abstract class TorContext @Throws(IOException::class) protected constructor(val 
         val environment = processBuilder.environment()
         environment.put("HOME", workingDirectory.absolutePath)
         when (OsType.current) {
-            OsType.LNX32, OsType.LNX64 ->
+            OsType.LNX32, OsType.LNX64, OsType.LNXARMHF, OsType.LNXARM64 ->
                 // We have to provide the LD_LIBRARY_PATH because when looking
                 // for dynamic libraries
                 // Linux apparently will not look in the current directory by
