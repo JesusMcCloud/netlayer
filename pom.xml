@@ -5,7 +5,7 @@
 
     <groupId>org.berndpruenster.netlayer</groupId>
     <artifactId>parent</artifactId>
-    <version>0.6.5</version>
+    <version>0.6.5.1</version>
     <packaging>pom</packaging>
 
     <name>Netlayer</name>
@@ -17,7 +17,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- Maven plugins -->
         <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
-        <tor-binary.version>8.0.8</tor-binary.version>
+        <!-- jitpack refuses to build version 0.4.0.5-jitpack, so here is the same version addressed by the commit id -->
+        <tor-binary.version>1b4fbceee9</tor-binary.version>
     </properties>
 
     <modules>
