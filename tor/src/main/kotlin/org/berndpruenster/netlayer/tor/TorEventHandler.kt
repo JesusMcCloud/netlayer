@@ -109,7 +109,7 @@ class TorEventHandler : EventHandler {
             UPLOADED -> {
                 val hiddenServiceID = "${msg.split(" ")[1]}.onion"
                 synchronized(listenerMap) {
-                    logger?.info("Hidden Service $hiddenServiceID.onion is ready")
+                    logger?.info("Hidden Service $hiddenServiceID.onion has been announced to the Tor network.")
                     listenerMap[hiddenServiceID]?.run {thread(block = this)}
                     listenerMap.remove(hiddenServiceID)
                 }
