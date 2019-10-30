@@ -125,6 +125,10 @@ class TorEventHandler : EventHandler {
         logger?.debug("hiddenService: HS_DESC_CONTENT $descriptorId $descriptor, as in $msg")
     }
 
+    override fun timeout() {
+        logger?.debug("The control connection to tor did not provide a response within one minute of waiting.")
+    }
+
     override fun unrecognized(type: String, msg: String) {
         val msg2 = "unrecognized: current: $type , $msg: msg"
         logger?.debug(msg2)
