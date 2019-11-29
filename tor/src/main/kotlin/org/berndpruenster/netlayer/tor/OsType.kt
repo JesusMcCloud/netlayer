@@ -40,6 +40,8 @@ import java.util.*
 enum class OsType { WIN,
     LNX32,
     LNX64,
+    LNXARMHF,
+    LNXARM64,
     MACOS,
     ANDROID;
 
@@ -86,6 +88,12 @@ enum class OsType { WIN,
                 if (unameOutput.compareTo("x86_64") == 0) {
                     return LNX64
                 }
+                if (unameOutput.matches(Regex("arm.+"))) {
+                    return LNXARMHF
+                }
+                if (unameOutput.compareTo("aarch64") == 0) {
+                    return LNXARM64
+                }
                 throw  RuntimeException("Could not understand uname output, not sure what bitness")
             } catch (e: IOException) {
                 throw  RuntimeException("Uname failure", e)
@@ -99,7 +107,6 @@ enum class OsType { WIN,
     }
 
     fun isUnixoid(): Boolean {
-        return listOf(LNX32, LNX64, MACOS).contains(this)
+        return listOf(LNX32, LNX64, LNXARMHF, LNXARM64, MACOS).contains(this)
     }
 }
-
