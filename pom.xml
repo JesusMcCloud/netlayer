@@ -5,7 +5,7 @@
 
     <groupId>org.berndpruenster.netlayer</groupId>
     <artifactId>parent</artifactId>
-    <version>0.6.7</version>
+    <version>0.6.8</version>
     <packaging>pom</packaging>
 
     <name>Netlayer</name>
@@ -17,7 +17,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- Maven plugins -->
         <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
-        <tor-binary.version>0.4.2.6</tor-binary.version>
+        <tor-binary.version>0.4.3.6</tor-binary.version>
     </properties>
 
     <modules>
